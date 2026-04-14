@@ -13,14 +13,24 @@ This repo is a complete AI toolkit for logistics. Every skill is a standalone pr
 
 | Skill | What it does | Time saved |
 |-------|-------------|------------|
-| 📦 Shipment Status Summarizer | Compile tracking data into a client-ready status update with ETAs and exceptions. | ~10 min/update |
-| 💲 Carrier Rate Comparison | Summarize rate quotes across carriers with transit times, accessorials, and trade-offs. | ~15 min/comparison |
-| 📄 BOL Generator | Create a bill of lading from shipment details with proper commodity descriptions. | ~10 min/BOL |
-| 📋 Claims Documentation Builder | Compile photos, PODs, and damage descriptions into a carrier claims package. | ~20 min/claim |
-| 🗺️ Route Optimization Brief | Analyze multi-stop routes and suggest resequencing for mileage and time savings. | ~15 min/route |
-| ✅ Compliance Document Checker | Review driver logs, hazmat paperwork, and customs docs for completeness. | ~15 min/check |
+| Carrier Performance Scorecard | Turn a pile of historical shipment data into a clean, decision-ready carrier scorecard that grades each carrier on on-time performance, damage/claims rate, invoice accuracy, tender acceptance, responsiveness, and cost competitiveness — then recommends lane-level "preferred / backup / probation" tiers so procurement can reshape the routing guide with confidence. | ~45 min/scorecard |
+| Carrier Rate Comparison | Summarize rate quotes across carriers with transit times, accessorials, and trade-offs. | ~15 min/comparison |
+| Dock Scheduling & Detention Prevention Brief | Analyze dock appointment data, carrier arrival patterns, and detention/demurrage invoices to produce an action-ready brief that reshapes the daily dock schedule, cuts avoidable detention charges, and protects customer-critical inbound/outbound flows. | ~30 min/brief |
+| Route Optimization Brief | Take a raw stop list for a multi-stop P&D or delivery route and produce a resequenced, driver-ready plan with defensible mileage and time savings, HOS-feasibility checks, and a ready-to-send dispatch communication — so the planner can commit the new sequence in minutes instead of eyeballing a map. | ~30 min/route |
+| Shipment Exception Handler | Triage shipment exceptions (delays, damages, refused deliveries, weather holds, customs holds) and produce a structured response plan with root-cause analysis, corrective actions, and ready-to-send stakeholder communications. | ~20 min/exception |
+| Shipment Status Summarizer | Compile tracking data into a client-ready status update with ETAs and exceptions. | ~10 min/update |
+| Freight Quote Response Drafter | Turn internal rate data and shipment requirements into a professional, customer-ready freight quote response — complete with pricing breakdown, transit time, terms and conditions, and value-add highlights that differentiate your company from competitors. | ~15 min/quote |
+| Load Tender Response Drafter | Evaluate an inbound load tender against carrier or broker acceptance criteria and produce a structured accept / counter / reject recommendation — along with the customer-facing response (EDI 990 equivalent language or email reply) and an internal decision rationale that a dispatcher or sales rep can approve in under a minute. | ~10 min/tender |
+| Shipment Inquiry Responder | Draft professional, empathetic customer responses to common shipping inquiries — tracking questions, delay explanations, delivery confirmations, damage reports, and rate requests — so your team can respond faster and more consistently. | ~8 min/inquiry |
+| BOL Generator | Create a bill of lading from shipment details with proper commodity descriptions. | ~10 min/BOL |
+| Claims Documentation Builder | Assemble a carrier freight-claim package — cover letter, evidence index, claim amount calculation, and supporting documents list — that meets Carmack-standard filing requirements and gives the claims desk every exhibit a carrier or broker needs to accept liability without a round of requests-for-information. | ~30 min/claim |
+| Compliance Document Checker | Review driver logs (HOS/ELD), hazmat shipping papers, and customs entry documents against the specific regulatory checklist each domain requires — flagging missing fields, out-of-tolerance entries, and high-risk gaps — and produce an audit-ready review log with clear pass / flag / fail status on each item before the documents leave the building. | ~25 min/review |
+| Customs Classification Brief | Analyze product descriptions and generate a customs classification brief with recommended HTS/HS codes, duty rate estimates, required documentation checklist, and flagged compliance risks — giving your team a head start on clearance preparation before submission to a licensed customs broker. | ~25 min/classification |
+| Email Drafter | Turn rough notes into a professional, logistics-industry email — ready to send to carriers, customers, vendors, or internal teams — matching your company's voice and communication standards. | ~10 min/use |
+| Meeting Summarizer | Transform raw meeting notes from logistics operations meetings into structured, actionable summaries — capturing decisions, shipment-related action items, carrier performance notes, and follow-ups so nothing falls through the cracks. | ~10 min/use |
+| Review Responder | Craft professional, on-brand responses to online reviews — addressing logistics-specific feedback about delivery times, shipment handling, communication during transit, pricing, and customer service — so your team can respond quickly and consistently across all review platforms. | ~10 min/use |
 
-**Total time saved per use: ~85+ minutes across all skills.**
+**Total time saved per use: ~303+ minutes across all skills.**
 
 ## Quick Start
 
