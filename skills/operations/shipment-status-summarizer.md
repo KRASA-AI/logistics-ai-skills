@@ -4,8 +4,8 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~10 min/update"
-version: 2.0
-last_eval_score: null
+version: 2.1
+last_eval_score: 8.7
 ---
 
 # 📦 Shipment Status Summarizer
@@ -71,4 +71,68 @@ You are a visibility analyst's AI assistant. Your job is to turn tracking events
 
 ## Example Output
 
-> [This section will be populated by the eval system with a reference example. For now, run the skill with sample input to see output quality.]
+Reference output (illustrative — single ocean FCL + drayage + LTL move with an active dwell exception, three audience variants from one normalized event log).
+
+**Header (shared across all three audiences)**
+
+| Field | Value |
+|---|---|
+| Shipment IDs | Container MSCU-7820194 / HBL ACME-OCN-22871 / Drayage REF DR-44210 / LTL PRO 9911-44820 |
+| Lane | Shanghai (CNSHA) → Long Beach (USLGB) → Anaheim DC → Phoenix consignee |
+| Original commitment | Customer-promised delivery 2026-04-22 (window 08:00–17:00 PT, MABD 04-23) |
+| Current status | Container discharged USLGB 04-19; gate-out delayed at chassis pool; awaiting dray pickup |
+| **ETA** | **2026-04-24 (PT, AM window)** — confidence **Moderate** |
+| Confidence basis | Discharge on time; chassis-pool dwell at 36h vs. 24h SLA; recovery plan in place — but margin to MABD is thin |
+
+**Milestone timeline (normalized)**
+
+- 2026-03-22 17:42 CST — Booking confirmed (CMA CGM)
+- 2026-03-25 09:14 CST — Gate-in CNSHA (Yangshan terminal)
+- 2026-03-26 22:01 CST — Vessel loaded, MV CMA CGM Marco Polo V.2614W
+- 2026-03-27 04:30 CST — Sail
+- 2026-04-18 19:48 PT — Vessel arrived USLGB (anchorage 6h)
+- 2026-04-19 14:22 PT — Discharged from vessel
+- 2026-04-19 22:10 PT — Container released by terminal (customs cleared 04-19 11:00 PT, ISF on file, no exam)
+- 2026-04-21 10:14 PT — *Exception: chassis-pool dwell exceeds 24h SLA — drayage carrier reports chassis shortage at SSA West Basin pool*
+- *Pending:* Gate-out + dray to Anaheim DC + LTL tender to PRO 9911-44820
+
+**Exception log**
+
+| Severity | Description | $ Impact | Owner | Action | Deadline |
+|---|---|---|---|---|---|
+| Actionable | Chassis-pool dwell — 36h elapsed vs. 24h SLA at SSA West Basin | Demurrage accrual ~$235/day after 04-22 free-time end; missed-MABD chargeback risk $850 if 04-23 slips | Drayage carrier (PacWest Intermodal) | Confirm chassis ETA, escalate to dispatch sup, request alt-pool diversion | 2026-04-22 12:00 PT |
+
+**Customer-facing version (one paragraph + bullet)**
+
+> Your container MSCU-7820194 from Shanghai discharged on time at Long Beach on April 19 and has cleared U.S. Customs. We are now waiting on a chassis at the terminal pool, which has been slower than usual this week. We are tracking this directly with the drayage carrier and currently project delivery to your Phoenix dock on **Thursday April 24, AM window** (one business day past the original commitment, before MABD 04-23 expires).
+>
+> - Where: Long Beach terminal, awaiting gate-out
+> - ETA: 04-24 AM (Phoenix, PT) — moderate confidence
+> - What we'll do: confirm chassis ETA by noon today and update you the same hour
+> - Question for you: any need to coordinate the Anaheim DC sort or push the appointment? Reply 👍 to keep current plan.
+
+**Operational version (CSR / dispatcher)**
+
+> MSCU-7820194 — chassis-dwell exception, 36h at West Basin (24h SLA). Customs cleared 04-19. PacWest dispatch has chassis ETA pending; alt-pool (PHL Inland) under consideration.
+>
+> Open items checklist:
+> 1. PacWest dispatch — confirm chassis ETA + alt-pool feasibility (call 11:00 PT)
+> 2. Anaheim DC — hold the pre-cleared appointment slot for 04-23 PM, fall back to 04-24 AM
+> 3. LTL tender PRO 9911-44820 — push pickup-ready notification by 4h
+> 4. Customer comms — fired customer-facing variant 04-22 09:00 PT; re-fire if chassis ETA slips past 04-22 EOD
+>
+> Demurrage meter: $235/day post 04-22 free-time end; chargeback risk $850 if MABD 04-23 missed without consent.
+
+**Executive rollup (single shipment in scope, but written in rollup form)**
+
+> *On-time %: 0/1 (one shipment, projected one-day late). Exceptions: 0 informational / 1 actionable / 0 critical. Top at-risk: MSCU-7820194 — chassis-pool dwell, $235/day demurrage exposure, $850 chargeback risk, recovery plan in place. ETA 04-24 AM, moderate confidence. No customer escalation yet.*
+
+**Next-action line (single most important next step)**
+
+> *Confirm chassis ETA with PacWest dispatch by 12:00 PT today; if slips past 04-22 EOD, divert to PHL Inland pool and notify customer same hour.*
+
+**Internal notes**
+
+- Lane transit assumption: TPEB Shanghai → Long Beach 22 days vessel + 1.5 days terminal + 1 day dray + 2 days LTL Phoenix; standard published transit used (no expedited service tier on this booking).
+- ETA confidence: **Moderate** because exception is active but recovery plan is concrete and inside SLA tolerance for the customer tier (Tier 2 per `config.yml` — single one-day-late slip without chargeback if MABD held).
+- Saved to `outputs/MSCU-7820194-status-2026-04-22-AM.md` if confirmed.

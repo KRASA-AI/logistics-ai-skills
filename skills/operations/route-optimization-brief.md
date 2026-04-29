@@ -4,8 +4,8 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~30 min/route"
-version: 2.0
-last_eval_score: null
+version: 2.1
+last_eval_score: 8.6
 ---
 
 # 🗺️ Route Optimization Brief
@@ -66,4 +66,54 @@ You are a fleet-dispatch and routing analyst's AI assistant. Your job is to rese
 
 ## Example Output
 
-> [This section will be populated by the eval system with a reference example. For now, run the skill with sample input to see output quality.]
+Reference output (illustrative — 9-stop P&D route, dry van, single driver, mid-day reroute after a late add).
+
+**Header**
+
+| Field | Value |
+|---|---|
+| Route | RTE-2026-0428-DAL-N |
+| Driver / tractor / trailer | J. Romero (CDL-A, hazmat: no) / T-204 / V-318 (53' dry van) |
+| HOS remaining at start | 8h 40m drive / 11h 20m on-duty / 52h 70-cycle |
+| Baseline | 9 stops · 218.4 mi · 7h 22m drive · 10h 18m on-duty · est. fuel $97 · tolls $12 |
+| Proposed | 9 stops · 191.7 mi · 6h 38m drive · 9h 31m on-duty · est. fuel $85 · tolls $12 |
+| Δ vs. baseline | **−26.7 mi (−12.2%) · −44 min drive · −47 min on-duty · −$12 fuel · tolls flat** |
+
+**Proposed stop sequence**
+
+| Seq | Stop ID | Type | Address (city) | Window | Est. arrive | Est. depart | Mi from prior | Cum. on-duty |
+|---|---|---|---|---|---|---|---|---|
+| 1 | S-101 | Pickup | Garland, TX | 08:00–10:00 | 08:35 | 09:05 | 14.2 | 1h 05m |
+| 2 | S-102 | Delivery | Mesquite, TX | 09:00–12:00 | 09:31 | 09:51 | 9.8 | 1h 51m |
+| 3 | S-104 | Delivery | Balch Springs, TX | 09:30–13:00 | 10:08 | 10:23 | 7.4 | 2h 23m |
+| 4 | S-103 | Pickup+Delivery | Seagoville, TX | 10:00–14:00 (LIFO) | 10:50 | 11:20 | 11.1 | 3h 20m |
+| 5 | (break) | DOT 30-min | — | — | 11:20 | 11:50 | — | 3h 50m |
+| 6 | S-106 | Delivery | Wilmer, TX | 11:00–15:00 | 12:14 | 12:29 | 14.6 | 4h 29m |
+| 7 | S-107 | Delivery | Lancaster, TX | 12:00–15:30 | 12:48 | 13:03 | 8.9 | 5h 03m |
+| 8 | S-108 | Pickup | DeSoto, TX | 13:00–16:00 | 13:21 | 13:51 | 6.0 | 5h 51m |
+| 9 | S-105 (added) | Delivery (MABD 16:00) | Duncanville, TX | hard 16:00 | 14:14 | 14:34 | 8.2 | 6h 34m |
+| return | yard | Yard cutoff 17:00 | Dallas, TX | by 17:00 | 15:31 | — | 18.6 | 7h 31m |
+
+Per-leg miles: TMS PC*Miler practical pulled where available; otherwise straight-line × 1.18 with config avg-speed 36 mph in-town / 52 mph between clusters.
+
+**Savings summary**
+
+- Distance: −26.7 mi (−12.2%) · Drive time: −44 min (−10.0%) · On-duty: −47 min (−7.6%)
+- Fuel: −$12 at config 6.4 MPG and $3.55/gal · Tolls: flat (no managed-lane needed)
+- Stops completed: 9 of 9 · No hard window cut · LIFO trailer order preserved on S-103
+
+**Constraint log**
+
+- *Input gap fixed at validation:* S-105 added mid-day with hard 16:00 MABD; window confirmed in TMS. No blocker remaining.
+- *HOS:* Plan fits inside 11/14/70 with 1h 09m drive headroom and yard return 1h 29m before cutoff. 30-min break placed at S-103 (43 min dwell available for LIFO unload + reload — covers break).
+- *Real-world gotchas:* Low-clearance bridge on TX-352 west of S-104 logged in fleet KB as 13'2" — proposed routing uses I-635 bypass (verified). Hazmat n/a.
+- *Trade-off:* −26.7 mi route is +0.3 mi vs. a tighter geographic cluster, but the cluster version places the break roadside; the proposed plan keeps the break at a customer dock.
+
+**Driver message (3–5 lines, company voice)**
+
+> Hi Jose — quick reseq on RTE-0428-DAL-N. New order: 101 → 102 → 104 → 103 (LIFO/break) → 106 → 107 → 108 → 105 (hard 16:00). About 27 fewer miles, 44 min less drive, end-of-day yard by 15:31. Take I-635 west of Balch Springs (TX-352 bridge clearance). Sanity check S-105 dock entrance — it was added at 09:10. Reply 👍 or flag.
+
+**Notes**
+
+- Saved to `outputs/RTE-2026-0428-DAL-N-resequenced.md` after planner confirms.
+- Sequence is a routing recommendation; dispatcher commits the new sequence in TMS after the driver acknowledges.
