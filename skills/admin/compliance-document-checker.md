@@ -4,8 +4,8 @@ category: admin
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~25 min/review"
-version: 2.0
-last_eval_score: null
+version: 2.1
+last_eval_score: 8.8
 ---
 
 # ✅ Compliance Document Checker
@@ -63,4 +63,48 @@ You are a transportation compliance analyst's AI assistant. Your job is to apply
 
 ## Example Output
 
-> [This section will be populated by the eval system with a reference example. For now, run the skill with sample input to see output quality.]
+Reference output (illustrative — HOS/ELD log review, 7-day cycle, single driver, post-trip pre-filing review ahead of DOT roadside safety audit).
+
+**Review header**
+
+| Field | Value |
+|---|---|
+| Document type | Driver HOS / ELD log |
+| Document identifier | Driver log — J. Martinez (CDL #TX-8841229) · 2026-05-04 through 2026-05-10 |
+| Review date | 2026-05-11 |
+| Reviewer | AI compliance pre-screen (not a substitute for licensed compliance officer review) |
+| **Overall disposition** | **Needs correction before release** |
+| Blocking issues | 1 (see below) |
+
+**Checklist table**
+
+| # | Item | Status | Evidence observed | Citation | Required correction | Owner |
+|---|---|---|---|---|---|---|
+| a | Every day has at least one log entry | Pass | 7 of 7 days have entries; no missing-day gaps | 49 CFR §395.8(a) | None | — |
+| b | 11-hour driving limit not exceeded after 10-hour off-duty reset | Pass | Max driving day: 10h 22m (05-07); all other days ≤ 10h; 10-hour off-duty reset present before each driving shift | 49 CFR §395.3(a)(3)(i) | None | — |
+| c | 14-hour on-duty window not exceeded | **Flag** | 05-09: on-duty window clocks 14h 18m (on-duty 07:14, last duty event 21:32); exceeds 14-hour window by 18 minutes. Driver annotated "traffic delay" but annotation is not tied to a specific event record in the ELD | 49 CFR §395.3(a)(2) | Driver or dispatcher must add an event-record annotation with specific location and cause of the 18-minute overage; annotation requires driver e-signature within the ELD correction window. If annotation is outside the correction window, a supervisor note of record is required. | Driver (J. Martinez) / Dispatcher |
+| d | 30-minute break taken within first 8 hours of driving | **Fail** | 05-06: driver logs 8h 44m of continuous driving (06:02–14:46) before a 34-minute off-duty break. No break recorded within the first 8 driving hours. | 49 CFR §395.3(a)(3)(ii) | This is a regulatory violation. Driver must be briefed; the violation must be documented in the carrier's HOS violation log. If this log is being reviewed for a DOT audit, this item will likely generate a warning or citation. Recommend adding a corrective-action note signed by the compliance officer before filing. | Compliance officer / Driver |
+| e | 70-hour / 8-day cycle not exceeded | Pass | 70-hour counter at end of 05-10: 62h 40m. No cycle violation. | 49 CFR §395.3(b)(2) | None | — |
+| f | Personal conveyance and yard-move use within policy | Pass | No PC or YM events logged this week. | 49 CFR §395.2 (definitions) | None | — |
+| g | All edits carry required annotation and e-signature | **Flag** | 05-08: one edit to driving start time (07:31 → 07:44, reason field reads "entered incorrectly") — annotation is present but e-signature timestamp is missing from the ELD export. The ELD system shows the edit but the signature field is blank. | 49 CFR §395.8(i) | Driver must re-open the edit in the ELD and apply the required e-signature. If the ELD's correction window has closed, a paper amendment signed by the driver is required as a supplement. | Driver (J. Martinez) |
+| h | Unidentified driving assigned | Pass | No unidentified driving segments in the 7-day window. | 49 CFR §395.8(j)(2) | None | — |
+| i | DVIR completed at start and end of shift | **Flag** | 05-10 end-of-shift DVIR is recorded as "no defects" but the completion timestamp (23:59) is 47 minutes after the driver's last driving event (23:12) and 31 minutes after the ELD logs the driver into off-duty status. DVIR timing is anomalous — either the DVIR was backdated or completed after the driver stopped the tractor. | 49 CFR §396.11(a) | Confirm with driver whether the tractor was re-entered for inspection or whether the DVIR timestamp reflects a backdated entry. If backdated, add a supervisor explanatory note. | Dispatcher / Driver |
+
+**Blocking issues (Fail items — do not file until resolved)**
+
+1. **Item d — 49 CFR §395.3(a)(3)(ii) violation (05-06):** 8h 44m continuous driving without a 30-minute break. Regulatory violation; must be documented in the carrier's HOS violation log and a corrective-action note signed by the compliance officer must accompany the log before a safety-audit presentation.
+
+**Pattern flags**
+
+No systemic pattern across the 7-day window. The 14-hour overage (item c) and the break violation (item d) are on different days and have different root causes (traffic delay vs. schedule pressure). Both should be reviewed in the context of the broader driver dataset — if similar violations appear across other drivers on the 05-06 dispatch, the root cause is likely dispatch-side scheduling, not driver compliance.
+
+**Correction action list**
+
+| # | Correction | Owner | Due by |
+|---|---|---|---|
+| 1 | Document item d (break violation 05-06) in HOS violation log; compliance officer signs corrective-action note | Compliance officer | Before audit date |
+| 2 | Driver applies e-signature to 05-08 edit in ELD; if correction window closed, paper amendment required | J. Martinez | Within 24 hr |
+| 3 | Add event-record annotation with location + cause for 05-09 14-hour overage; driver e-signs | J. Martinez / Dispatcher | Within 24 hr |
+| 4 | Confirm 05-10 end-of-shift DVIR timing with driver; supervisor explanatory note if backdated | Dispatcher | Within 24 hr |
+
+**Disposition: Needs correction before release.** File only after items 1–4 are resolved and the compliance officer has signed off on the corrective-action note for item d.

@@ -4,8 +4,8 @@ category: admin
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~15 min/BOL"
-version: 2.0
-last_eval_score: null
+version: 2.1
+last_eval_score: 8.8
 ---
 
 # 📄 BOL Generator
@@ -73,4 +73,119 @@ You are a freight-documentation specialist's AI assistant. Your job is to produc
 
 ## Example Output
 
-> [This section will be populated by the eval system with a reference example. For now, run the skill with sample input to see output quality.]
+Reference output (illustrative — 2-class LTL move, dry van, no hazmat, liftgate delivery required).
+
+**Header block**
+
+| Field | Value |
+|---|---|
+| BOL # | BOL-2026-0511-ACM-0074 |
+| Date | 2026-05-11 |
+| Carrier | Estes Express Lines |
+| SCAC | EXLA |
+| Pro # | (blank — to be assigned by carrier at pickup) |
+| Freight terms | Prepaid |
+| Service level | Standard LTL |
+| PO / Customer ref | PO-88421 |
+| Pickup date / ready time | 2026-05-12 · 08:00 CT |
+
+**Shipper block**
+
+| Field | Value |
+|---|---|
+| Legal name | Acme Distribution LLC |
+| Address | 1800 Industrial Pkwy, Cincinnati, OH 45217 |
+| Contact | D. Hoffman — dock supervisor |
+| Phone | 513-555-0192 |
+| Dock hours | 07:00–15:00 CT Mon–Fri |
+| Shipper of record | Yes |
+
+**Consignee block**
+
+| Field | Value |
+|---|---|
+| Legal name | Midwest Retail DC, Inc. |
+| Address | 4400 Logistics Blvd, Columbus, OH 43228 |
+| Contact | Receiving dept. |
+| Phone | 614-555-0374 |
+| Receiving hours | 07:00–16:00 ET Mon–Fri |
+| Appointment required | No |
+
+**Third-party payor**
+
+N/A — freight terms prepaid, bill-to is shipper of record.
+
+**Special instructions**
+
+Liftgate delivery required at consignee (no dock-high door). Notify consignee 2 hr before delivery: 614-555-0374.
+
+**Freight terms**
+
+Freight charges: PREPAID. Carrier is authorized to deliver without collect charges.
+
+**Commodity detail table**
+
+| HU Qty | HU Type | Pkg Qty | Pkg Type | Weight (lb) | HM | Commodity Description | NMFC # | Class |
+|---|---|---|---|---|---|---|---|---|
+| 4 | Pallets | 48 | Cartons | 1,920 | N | Automotive brake pads, new — plastic packaged | 36840 sub 1 | 55 |
+| 2 | Pallets | 16 | Cartons | 480 | N | Corrugated packaging material, flat sheets | 56050 sub 2 | 100 |
+| **6** | | **64** | | **2,400** | | | | |
+
+*Density check — Line 1: 48 cartons × avg 40 lb = 1,920 lb; pallet dims 48×40×54 in → 60 lb/ft³ → class 55 confirmed. Line 2: 16 cartons × avg 30 lb = 480 lb; pallet dims 48×40×36 in → 10 lb/ft³ → class 100 confirmed. No class mismatch.*
+
+**Hazmat declaration**
+
+No hazardous materials on this shipment.
+
+**Accessorial codes**
+
+| Code | Description | Trigger |
+|---|---|---|
+| DLIFT | Liftgate — delivery | Consignee has no dock-high door (per special instructions) |
+| NOTIFY | Notify before delivery | 2-hr advance call required |
+
+*No pickup liftgate required — shipper has dock-high doors.*
+
+**Declared value / COD**
+
+Declared value: N/A (released value per carrier tariff applies). COD: N/A.
+
+**Shipper certification and signature lines**
+
+> This is to certify that the above-named materials are properly classified, described, packaged, marked, and labeled, and are in proper condition for transportation according to the applicable regulations of the DOT.
+
+Signatory (shipper of record): D. Hoffman, Acme Distribution LLC
+Signature: _________________________ Date: ____________ Time: _______
+
+**Carrier pickup signature lines**
+
+Driver name (printed): _________________________
+Driver signature: _________________________ Date: ____________ Time: _______
+Piece count confirmed at pickup: _______ pallets / _______ cartons
+
+**Gap list**
+
+| Gap | Type | Action required |
+|---|---|---|
+| Carrier Pro # | Informational only | Carrier assigns at pickup; leave field blank on this copy, record on shipper's copy when driver annotates |
+| NMFC #36840 sub 1 (brake pads) | Proposed — confirm | NMFC subscription confirms sub 1 applies to non-asbestos brake pads in retail packaging; carrier may reclassify if shipment is repackaged as bulk. *Proposed, not confirmed.* |
+| NMFC #56050 sub 2 (corrugated sheets) | Proposed — confirm | Sub 2 applies to flat corrugated sheets on pallets; verify with carrier if sheets are cut-to-size or pre-printed. *Proposed, not confirmed.* |
+
+**Status: DRAFT — resolve NMFC sub confirmations before treating as final release copy.**
+
+**Release checklist (pre-handoff 8-point)**
+
+| # | Check | Status |
+|---|---|---|
+| 1 | BOL # recorded | ✅ BOL-2026-0511-ACM-0074 |
+| 2 | Pro # space present (blank for carrier assignment) | ✅ |
+| 3 | Hazmat block matches freight (no hazmat on this shipment) | ✅ Explicitly stated |
+| 4 | Third-party-payor account # (N/A — prepaid) | ✅ |
+| 5 | All weights match pallet scale | ⬜ Verify before tender — scale confirmation pending |
+| 6 | Shipper-of-record signature line present | ✅ |
+| 7 | Driver signature line present | ✅ |
+| 8 | Two copies prepared (shipper retains, driver carries) | ⬜ Print two copies before pickup window |
+
+**One-line handoff note to warehouse / shipping clerk**
+
+> BOL-2026-0511-ACM-0074 ready for EXLA pickup 05/12 08:00–10:00 CT. 6 pallets, 2,400 lb, 2 class breaks (class 55 brake pads + class 100 corrugated). No hazmat. Liftgate delivery required at Columbus. Confirm pallet weights on dock scale before driver signs.

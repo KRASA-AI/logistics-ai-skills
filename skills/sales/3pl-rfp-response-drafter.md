@@ -4,8 +4,8 @@ category: sales
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~6–10 hr/RFP"
-version: 1.0
-last_eval_score: null
+version: 1.1
+last_eval_score: 8.8
 ---
 
 # 📑 3PL Multi-Section RFP Response Drafter
@@ -77,7 +77,105 @@ You are the deal desk's AI assistant drafting a multi-section RFP response. Your
 
 ## Example Output
 
-> [This section will be populated by the eval system with a reference example. For now, run the skill with sample input to see output quality.]
+Reference output (illustrative — mid-market shipper RFP, 8-section TL + LTL managed-transportation scope, challenger position, target win-probability tier).
+
+**Executive summary (page 1 of submission)**
+
+| Field | Value |
+|---|---|
+| Responding company | Meridian Freight Partners LLC |
+| Deal owner | K. Adeyemi, VP Sales |
+| Procurement contact | T. Nguyen, Supply Chain Director, Hartfield Consumer Goods |
+| Submission deadline | 2026-05-23 17:00 ET |
+| Submission channel | Hartfield procurement portal (RFP-2026-HCG-04) |
+| Win-probability tier | Target |
+
+**Three distinctive value points (tied to Hartfield's stated requirements):**
+1. Single-system visibility across TL and LTL via Project44 integration covering 99% of Hartfield's named carrier roster — matching the buyer's "carrier-agnostic real-time tracking" requirement.
+2. Dedicated lane-management team for Hartfield's Memphis–Atlanta corridor (46% of bid volume) — addressing the buyer's stated dissatisfaction with incumbent's reactive-only model.
+3. Proven 99.1% OTIF on comparable CPG volume (see reference: Springdale Household Products, Section 7) — directly responsive to the buyer's 98.5% OTIF SLA floor.
+
+**Table of contents:** Section 1: Company Overview | Section 2: Operational Capability | Section 3: Technology & Integration | Section 4: Security & Compliance | Section 5: Sustainability | Section 6: Pricing | Section 7: References | Section 8: Terms & Conditions Response
+
+---
+
+**Section map (internal workflow view)**
+
+| Sec | Title | Format | Char / pg limit | Buyer weight | Source | SME | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | Company Overview | Narrative | 2 pp | 5% | Library block LIB-CO-003 (last reviewed 2026-02-14, within 365-day window) | — | ✅ library-pull |
+| 2 | Operational Capability | Narrative + table | 4 pp | 25% | Library block LIB-OC-011 (last reviewed 2025-11-30, within 365-day window) + buyer-specific lane customization | Ops (R. Patel) | 🔶 needs SME pass |
+| 3 | Technology & Integration | Narrative + EDI checklist | 3 pp | 20% | Library block LIB-TECH-007 (last reviewed 2026-01-18, 180-day window ✅) | IT (M. Chen) | 🔶 needs SME pass |
+| 4 | Security & Compliance | Narrative + cert table | 2 pp | 10% | Library block LIB-SEC-002 (last reviewed 2026-03-05, 180-day window ✅) | IT / Compliance | ✅ library-pull |
+| 5 | Sustainability | Narrative | 1 pp | 5% | Net-new (no library block covers Hartfield's Scope 3 carrier-emissions-data ask) | Sustainability (D. Osei) | 🔴 new content — needs SME pass |
+| 6 | Pricing | Excel tab (provided template) | — | 25% | Deal desk + rate input from `freight-quote-response-drafter.md` runs for 12 named lanes | Finance / Deal desk | 🔶 pricing approval pending |
+| 7 | References | 3 named entries | 1 entry per page | 5% | LIB-REF-Springdale (permission confirmed 2026-04-10) + LIB-REF-Lakewood (permission confirmed 2026-03-22) + LIB-REF-Centara (permission pending — do not include until confirmed) | Acct team | 🔴 Centara permission outstanding |
+| 8 | T&C response | Buyer-supplied redline | — | 5% | Legal review required (buyer's limitation-of-liability clause diverges from standard) | Legal (J. Park) | 🔴 legal gate open |
+
+---
+
+**Section 2 — Operational Capability (library-pulled + customized, excerpt)**
+
+*[Library block LIB-OC-011 baseline text — buyer-specific customizations shown in brackets]*
+
+Meridian Freight Partners operates a managed-transportation model for [shippers with 200–2,000 annual truckload equivalents in the CPG and general-merchandise sector], coordinating a vetted carrier roster of [420 active carriers] across [28 states]. Our model centers on a dedicated account team — not a shared-services pool — so the [Hartfield] account has named personnel who know the [Memphis–Atlanta] corridor's capacity dynamics, the [Walmart Neighborhood Market DC] appointment windows, and the [seasonal peak in Q4 associated with Hartfield's promotional calendar].
+
+For [Hartfield's bid volume of approximately 1,800 TL and 3,200 LTL shipments annually], Meridian would assign a [2-person dedicated lane team] responsible for [daily tender management, carrier performance scoring, and a weekly 30-minute operational review with Hartfield's supply chain team].
+
+*[Customization notes: "CPG and general-merchandise sector" added for Hartfield; "420 active carriers" and "28 states" from current carrier master (ops SME to confirm current count before submission); "Memphis–Atlanta corridor" and "Walmart Neighborhood Market DC" specific to Hartfield's RFP Section 2.3 requirement. Ops SME (R. Patel) must confirm carrier count and dedicated-team staffing model before this section is released.]*
+
+**Section 2 — SME-pass flag:** *NEW CONTENT — needs SME pass before submission.* Customized lane-team staffing model (2 FTEs dedicated to Hartfield) requires R. Patel sign-off on capacity to commit.
+
+---
+
+**Section 6 — Pricing (representative rows, Excel tab format)**
+
+| Lane | Origin | Destination | Equipment | Rate basis | All-in rate | FSC mechanism | Validity | Margin vs. floor |
+|---|---|---|---|---|---|---|---|---|
+| MEM–ATL-01 | Memphis, TN (38118) | Atlanta, GA (30336) | 53' dry van | Per mile | $2.41/mi | DAT index (weekly avg) × 18.5% of linehaul | Valid thru 2026-08-31 | Above floor ✅ |
+| MEM–ATL-02 LTL | Memphis, TN (38118) | Atlanta, GA (30336) | LTL, class 85 | Per cwt | $28.60/cwt | Estes FSC schedule applied at tender | Valid thru 2026-08-31 | Above floor ✅ |
+| CHI–MEM-01 | Chicago, IL (60609) | Memphis, TN (38118) | 53' dry van | Per mile | $2.28/mi | DAT index (weekly avg) × 18.5% of linehaul | Valid thru 2026-08-31 | Above floor ✅ |
+
+*Pricing approval required from Finance (J. Tran) before submission. Margin detail on file in deal-desk internal notes — not included in buyer submission.*
+
+*Rate strategy for multi-lane negotiation: routed through `spot-vs-contract-rate-negotiation-brief.md` — Hartfield's stated preference for contract rates on the MEM–ATL corridor means spot-market exposure acknowledged but pricing anchored to 12-month contract with quarterly GRI review.*
+
+---
+
+**Workflow tracker**
+
+| Step | Owner | Due | Status |
+|---|---|---|---|
+| RFP receipt + kickoff | K. Adeyemi | 2026-05-12 | ✅ |
+| Section map + library-pull | Deal desk | 2026-05-13 | ✅ |
+| Ops SME pass (Sections 2) | R. Patel | 2026-05-16 | 🔶 in progress |
+| IT SME pass (Section 3) | M. Chen | 2026-05-16 | 🔶 in progress |
+| Sustainability net-new draft (Section 5) | D. Osei | 2026-05-17 | 🔴 not started |
+| Centara reference permission | Acct team | 2026-05-17 | 🔴 outstanding |
+| Pricing approval | J. Tran | 2026-05-19 | 🔶 in progress |
+| Legal T&C redline (Section 8) | J. Park | 2026-05-20 | 🔴 not started |
+| Final compile + QA | Deal desk | 2026-05-22 | — |
+| Submission (24-hr buffer) | K. Adeyemi | 2026-05-23 by 17:00 ET | — |
+
+**Critical path:** Legal review (J. Park) and sustainability net-new (D. Osei) are both gating; both must clear by 2026-05-20 to preserve the compile window. Centara reference is non-blocking if the other two references are confirmed.
+
+---
+
+**Submission-ready trust check**
+
+| # | Check | Status |
+|---|---|---|
+| a | All library blocks within freshness window | ✅ All blocks ≤ 365 days (tech/security ≤ 180 days) |
+| b | All net-new content has had SME pass | 🔴 Section 5 (sustainability) not yet SME-reviewed |
+| c | All pricing rows above configured floor | ✅ (three rows shown; full tab requires Finance approval) |
+| d | All compliance claims documented | ✅ SOC 2 Type II (2026-02-28), COI on file, no CSRD obligation (US mid-market, Omnibus-scoped out) |
+| e | No non-standard legal terms committed without legal-review clear | 🔴 Section 8 limitation-of-liability divergence — legal gate open |
+| f | All references have documented permission | 🔴 Centara permission outstanding — do not include until confirmed |
+| g | No character / page limits violated | ✅ (narrative sections checked; pricing tab format matches buyer template) |
+| h | Submission-channel requirements met | ✅ Hartfield portal accepts PDF + Excel tab as separate uploads |
+| i | Post-submission obligations scheduled | ✅ Oral presentation scheduled 2026-06-03; BAFO round expected 2026-06-10 |
+
+**Response not submission-ready.** Three open gates: Section 5 SME pass (D. Osei), legal T&C clear (J. Park), Centara reference permission (acct team). All must close before the 2026-05-22 compile step.
 
 ## Configuration Reference
 
