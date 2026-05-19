@@ -4,8 +4,8 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~25 min/active-carrier review"
-version: 1.0
-last_eval_score: null
+version: 1.1
+last_eval_score: 8.7
 ---
 
 # 🔁 Carrier Identity-Change Monitor Brief
@@ -86,7 +86,123 @@ You are the procurement-and-compliance team's AI assistant working an active-rel
 
 ## Example Output
 
-> [This section will be populated by the eval system with a reference example. For now, run the skill with sample input to see output quality.]
+Reference output (illustrative — sold-MC scenario, mid-tier dry-van carrier already inside the active book, recurring quarterly review fired alongside a trigger event after a remit-to change). Synthetic but realistic data: carrier *Longhaul Transit Services LLC* (DBA Longhaul Express), MC #874512, USDOT #2913084 — none of these correspond to real entities.
+
+**Executive summary**
+
+> Longhaul Transit Services LLC (MC #874512, USDOT #2913084) was screened on 2025-09-18 with a Proceed disposition (layered-evidence pass, two-point dispatch callback verified). The Q2 2026 recurring review fired alongside a payment-instruction trigger received 2026-05-14. Three change indicators are now on the record without documented explanation: (1) MCS-150 updated 2026-04-22 with a new principal place of business (Edinburg, TX) and a new listed officer (R. Patel replacing the 2025-09 officer M. Vasquez), (2) remit-to entity changed 2026-05-12 from Longhaul Transit Services LLC direct-pay to a factoring assignment under Riverpoint Capital Funding LLC, and (3) dispatch email domain shifted from `@longhaultransit.example` to `@longhaul-dispatch.example` on the last three tenders. The behavior cluster on company freight has held steady; no commodity-tier or equipment-mix step-up observed in the last 90 days. **Current disposition: Continue-With-Conditions** — payment hold on the remit-to change pending NOA verification and a Secretary-of-State pull on the entity, with `carrier-insider-risk-brief.md` re-runs required on every assignment above the config high-value threshold for the next 60 days. No coverage gap on committed lanes; account team notified for awareness only.
+
+**As-of comparison table**
+
+| Element | Original-screening value (2025-09-18) | Current value (2026-05-18) | Change since last brief | Documented explanation |
+|---|---|---|---|---|
+| Legal name / DBA | Longhaul Transit Services LLC / Longhaul Express | Same | N | n/a |
+| MC / USDOT | MC #874512 / USDOT #2913084 | Same | N | n/a |
+| Listed officer (MCS-150) | M. Vasquez | R. Patel | **Y** | N — no notice received |
+| Principal place of business | Laredo, TX (suite 412) | Edinburg, TX (suite 207) | **Y** | N — no notice received |
+| MCS-150 last update | 2025-08-29 | 2026-04-22 | Y (expected cycle) | Y (routine biennial filing) |
+| Insurance carrier of record | Continental Cargo Mutual, policy CCM-22184-A | Continental Cargo Mutual, policy CCM-22184-A renewed 2026-02 | N (renewed only) | Y (renewal certificate on file) |
+| BOC-3 process agent | Standard Forwarders Inc. | Standard Forwarders Inc. | N | n/a |
+| Registered agent (TX SoS) | M. Vasquez (member-managed) | R. Patel (member-managed) | **Y** | N — same gap as MCS-150 officer change |
+| Remit-to entity | Longhaul Transit Services LLC (direct) | Riverpoint Capital Funding LLC (factoring assignment) | **Y** | Partial — NOA received 2026-05-12, not yet verified against Riverpoint's published verification line |
+| Banking routing | ABA 11400xxxx / acct …4419 | ABA 02100xxxx / acct …7782 (Riverpoint) | **Y** | Partial — follows the remit-to change; same verification status |
+| Dispatch email domain | @longhaultransit.example | @longhaul-dispatch.example (last 3 tenders) | **Y** | N — no notice; domain not yet validated as carrier-controlled |
+| Dispatch phone | (956) 555-0188 (SAFER-listed) | (956) 555-0188 inbound; (956) 555-0143 on last 2 tenders | **Y (split)** | N — second number not on SAFER |
+
+**Ownership / control lens**
+
+- *Texas Secretary-of-State filing observed* — 2026-04-08 amendment to the LLC's certificate of formation showing R. Patel as new sole member, M. Vasquez withdrawn. Filing pulled 2026-05-18 09:12 CT.
+- *FMCSA Registration Modernization records observed* — MCS-150 update 2026-04-22 reflects the SoS change; no separate MC reactivation, MC has remained continuously active. No FMCSA notice of legitimate transfer documented in the public record. Pulled 2026-05-18 09:14 CT.
+- *Business-credit signals observed* — Dun & Bradstreet score on the LLC dropped from 78 (2025-12) to 41 (2026-05) — consistent with an ownership change resetting the trade-payment history rather than with operational distress.
+- *Ghost-office / shared-PPOB pattern flag* — Edinburg suite 207 does not match any known mass-registered PPOB in the company's internal flag list; one unrelated MC also shows that address (cluster lens below), monitor only.
+- *Legitimate-transfer documentation status* — **Asked for** (carrier-facing message, see below) — not yet received, not yet verified. FMCSA's position that standalone MC-number transfer is not permitted is reflected in the documentation request: an asset or stock sale with a continuing entity is the only legitimate path, and the carrier is asked to evidence that path.
+
+**Load-mix lens**
+
+| Dimension | 2025-11 → 2026-02 (pre-change) | 2026-02 → 2026-05 (post-change) | Delta |
+|---|---|---|---|
+| Loads per month (avg) | 38 | 41 | +8% (within tolerance) |
+| Commodity-tier mix | 88% mid-tier general / 12% top-tier mid-value | 86% mid-tier / 14% top-tier mid-value | No step-up |
+| Equipment-mix | 100% dry van | 100% dry van | No change |
+| Lane-mix | TX↔OK 64%, TX↔LA 23%, TX↔NM 13% | TX↔OK 61%, TX↔LA 25%, TX↔NM 14% | No step-up |
+| On-time delivery rate | 96.2% | 94.1% | −2.1 pts (within tolerance, monitor) |
+| After-hours dispatch contact (% of tenders) | 4% | 11% | **Above 8% tolerance — flagged** |
+| Decline-then-accept flip | None observed | None observed | No flip |
+
+The behavior cluster on company freight has not stepped up in commodity tier, equipment mix, or lane mix — the carrier is still moving the freight the company onboarded it for. The only behavioral flag is after-hours dispatch cadence above the configured tolerance, which is consistent with a new dispatcher learning the book under different hours rather than a fraud-adjacent pattern.
+
+**Payment-instruction lens**
+
+- *Remit-to change observed* — 2026-05-12, from direct-pay to a factoring assignment under Riverpoint Capital Funding LLC.
+- *Change-of-banking authorization status* — Received 2026-05-12; signed by R. Patel as new sole member of record (consistent with the SoS amendment). Carrier-of-record signature element passes.
+- *Factoring-company NOA verification status* — Riverpoint NOA on Riverpoint letterhead received; Riverpoint's published verification line not yet called. **Pending — verification call queued for 2026-05-19 09:00 CT** against the verification number published on Riverpoint's website (not the number on the NOA).
+- *Callback to SAFER-listed phone* — Completed 2026-05-15 14:22 CT to (956) 555-0188; dispatch confirmed the factoring relationship but referenced a separate dispatch line for "operational" calls. The split-phone pattern is itself a flag.
+- *Payment-hold recommendation* — **Hold all open invoices and the next 60 days of new invoices on this MC** pending the Riverpoint verification call and the legitimate-transfer documentation pull. Standard 5-business-day hold notice routed to AP under the configured payment-instruction-freeze rule.
+
+**Platform-credential lens**
+
+- *Compromise-pattern indicators on the carrier's side* — None confirmed. The new dispatch email domain (`@longhaul-dispatch.example`) is registered to the same R. Patel as the SoS amendment (WHOIS pulled 2026-05-18), so the domain is not a typosquat impersonation of the original; it is a new domain owned by the new operator. Reply-to alignment confirmed (no divergent reply-to on the last three tenders).
+- *Carrier-notification path* — Not triggered (no compromise pattern). The brief proceeds on the ownership-control lens, not the credential lens.
+- *Operator-side IR cross-reference* — Not implicated. No `logistics-platform-security-controls.md` hand-off.
+
+**Cluster-across-carriers**
+
+- *Cluster signal observed* — One other active carrier in the book (MC #918334, mid-tier dry van) shares the Edinburg, TX suite 207 PPOB. That carrier's MCS-150 was updated 2026-04-25 with no officer change. One match is **monitor only**, below the configured cluster-size threshold of three within a 60-day window. **No SIU hand-off this run.** Cluster lens note carried forward to the next quarterly review; if a third carrier surfaces at the same PPOB inside the window, the cluster fires and an SIU note is produced at that point.
+
+**Disposition**
+
+- **Continue-With-Conditions.**
+- Controlling reason: *officer + PPOB + registered-agent change observed without notice on an active carrier paid for more than 90 days, with a concurrent remit-to-and-banking change to a factoring assignment whose carrier-side verification has not yet completed.*
+- Conditions: (1) **payment hold** on all open and 60-day-forward invoices pending Riverpoint verification call and legitimate-transfer documentation pull; (2) `carrier-insider-risk-brief.md` run on every tender above the config high-value threshold for 60 days; (3) manual procurement-side approval on every load assignment for the next two billing cycles; (4) re-screening (`carrier-fraud-screening-brief.md`) re-run at 2026-08-18 regardless of conditions-met status.
+- Documentation that re-opens the disposition: Riverpoint NOA verified on the published verification line, *and* the legitimate-transfer documentation (asset or stock purchase agreement closing date, FMCSA-on-the-record acknowledgment, or comparable evidence) received and reviewed.
+- Decision owner: Procurement Compliance Lead (name from `config.yml` → `siu_contact.primary`).
+
+**Carrier-facing message (procedural, non-accusatory, distinct to Continue-With-Conditions)**
+
+> Subject: Longhaul Transit Services LLC (MC #874512) — Q2 2026 active-carrier review — documentation request
+>
+> Hello R. Patel,
+>
+> As part of our routine quarterly review of active carriers, our procurement compliance team noted several elements on Longhaul Transit Services LLC's record that have updated since our most recent screening (2025-09-18). Under Section 7 of our carrier agreement, identity-change disclosure on changes to officer, principal place of business, remit-to entity, or banking instructions is requested at the time of change; we received the remit-to update on 2026-05-12 and the dispatch-domain change on the last three tenders, and we would like to pair those with the supporting record so we can keep your loads moving without interruption beyond the routine pay-hold described below.
+>
+> Please send the following by 2026-05-26:
+>
+> 1. Documentation of the ownership transition reflected in the 2026-04-08 Texas SoS amendment — an asset or stock purchase agreement closing date is sufficient; we are not asking for the dollar terms, only the closing record and the FMCSA acknowledgment if one was made
+> 2. A signed authorization for the Riverpoint Capital Funding LLC factoring assignment on Longhaul letterhead, naming Riverpoint's published verification line as the contact our AP team should call to confirm the change
+> 3. Confirmation of the `@longhaul-dispatch.example` domain as the carrier's primary tendering domain going forward, signed by the listed officer of record
+> 4. The current driver roster and dispatch contact roster, for our standard active-carrier file
+>
+> During the documentation window, we are holding open invoices and the next 60 days of new invoices on MC #874512 per our standard payment-instruction-change procedure (this is a control we apply to every carrier remit-to update, not a disposition on Longhaul). Tendering continues; loads in flight will be assigned with our standard load-screening process.
+>
+> The fastest path to releasing the pay-hold is items 1 and 2. If anything in this request is unclear or the timeline is a constraint, please reply to this email and we can discuss.
+>
+> Best,
+> [Procurement Compliance Lead]
+> [signature block from config.yml]
+
+**Internal compliance-owner note**
+
+> Longhaul Transit Services LLC (MC #874512) — Disposition: Continue-With-Conditions, recorded 2026-05-18 by Procurement Compliance Lead. Controlling indicators: officer + PPOB + RA change without notice (TX SoS amendment 2026-04-08 acknowledges the ownership transition; carrier had not disclosed it under the §7 agreement clause); remit-to assignment to Riverpoint Capital Funding LLC pending verification call on the published verification line (queued 2026-05-19 09:00 CT); split-phone pattern on the last two tenders. Behavior cluster on company freight steady — no commodity-tier, equipment-mix, or lane-mix step-up. Payment hold applied per standard procedure. `carrier-insider-risk-brief.md` set to fire on every above-threshold tender for 60 days. Re-screening scheduled 2026-08-18. Coverage gap on committed lanes: none — TX↔OK and TX↔LA backup carriers in the network can absorb if conditions are not met. Next review trigger: documentation receipt or 2026-05-26 deadline, whichever comes first. Escalation contact (SIU primary) notified for awareness; no SIU action this run. Audit-trail: pulls and timestamps in *Internal notes* block.
+
+**SIU note** — *Not produced this run.* Cluster lens did not fire (one PPOB match below the configured size threshold of three within 60 days). Cluster signal carried forward; if a third carrier surfaces at Edinburg, TX suite 207 inside the window, an SIU note is produced at that point.
+
+**Customer-impact note** — *Not produced this run.* The disposition is Continue-With-Conditions; tendering continues; no coverage gap on committed lanes.
+
+**Internal notes**
+
+- SAFER snapshot pulled 2026-05-18 09:08 CT
+- TX Secretary-of-State filing pulled 2026-05-18 09:12 CT
+- FMCSA Registration Modernization records pulled 2026-05-18 09:14 CT
+- D&B business-credit pulled 2026-05-18 09:22 CT
+- WHOIS on `@longhaul-dispatch.example` pulled 2026-05-18 09:31 CT
+- Callback to SAFER-listed phone (956) 555-0188 completed 2026-05-15 14:22 CT
+- Riverpoint published-verification-line callback queued 2026-05-19 09:00 CT
+- Prior brief: `carrier-fraud-screening-brief.md` run 2025-09-18 (Proceed disposition on file)
+- DRAFT flag: none (all lenses complete; payment-instruction lens is the only lens with a pending action, and the disposition is conditioned on that action's outcome rather than gated by it)
+
+**Anti-accusation guardrail**
+
+Every observed change in this brief is reported as a pattern observation, not an allegation. The Continue-With-Conditions disposition rests on documentary gaps — specifically the absence of identity-change disclosure under the §7 agreement clause and the not-yet-completed Riverpoint verification call — not on a finding of intent. The carrier may have an entirely routine asset-sale closing record that resolves the ownership and remit-to questions in a single document; the request window exists precisely so that record can be put on file. The brief explicitly preserves the *carrier-as-victim-of-compromise* disposition path (would surface if the verification call shows the factoring instructions diverge from Riverpoint's record or the new domain's WHOIS shows a registrant other than R. Patel), but this run does not support that path. SIU hand-off is the channel for an accusation; the brief is the channel for a procurement-side risk-allocation decision.
 
 ## Configuration Reference
 
