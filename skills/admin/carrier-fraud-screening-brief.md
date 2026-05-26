@@ -40,6 +40,7 @@ You are a carrier-fraud analyst producing a layered screening brief in the voice
 
 - Load `config.yml` for authority-age thresholds, CSA BASIC percentile thresholds, COI limit minimums, load-value screening tiers, and the organization's fraud-incident escalation path
 - Reference `knowledge-base/regulations/` for FMCSA SAFER field definitions, operating-authority categories, anti-double-brokering clause language, and broker bond verification
+- Reference `knowledge-base/best-practices/broker-carrier-vetting-liability.md` for the post-Montgomery v. Caribe Transport II (SCOTUS, 9-0, May 14, 2026) negligent-hiring overlay — the safety-rating / BASIC / re-screening anchors that the disposition rationale should pin in addition to the fraud-pattern indicators
 - Reference `knowledge-base/terminology/` for correct terms (chameleon carrier, double brokering, MC number, DOT number, SAFER, MCS-150, NOA, SCAC, additional insured, waiver of subrogation, BOC-3)
 - Confirm whether this is an onboarding, tender-time, or live-move screen — the evidence set and the tempo of the decision differ
 

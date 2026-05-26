@@ -4,8 +4,8 @@ category: _shared
 tools: [claude, chatgpt]
 difficulty: beginner
 time_saved: "~10 min/use"
-version: 2.1
-last_eval_score: null
+version: 2.2
+last_eval_score: 8.8
 ---
 
 # ✉️ Email Drafter
@@ -105,3 +105,47 @@ You are a logistics professional's AI assistant specializing in business corresp
 - **Pre-send flags (if any)** — Anything the user should double-check before hitting send (ambiguous date, missing reference number, escalation-level assumption made)
 - No unnecessary pleasantries or filler — logistics professionals value directness
 - Saved to `outputs/` if the user confirms
+
+## Example Output
+
+**Scenario:** A dispatcher is drafting a delay-notification email to a Tier-1 customer's logistics contact after a reefer on PRO 7791-44282 (Dallas → Atlanta, perishable produce, 14:00 ET MABD tomorrow) lost reefer-unit power overnight; driver swap was completed at the Tallapoosa drop-yard at 04:30 ET; reefer pre-cool is back to 36°F as of 05:15 ET; revised ETA is 10:30 ET (3 hr 30 min early to MABD, no chargeback risk if confirmed). Rough input notes from the dispatcher:
+
+> notes: reefer 38 went down ~01:00 ET. caught on geotab temp alert. swapped to spare tractor #4172 at Tallapoosa drop yard 04:30 ET. produce surface temp was at 41F worst, back to spec now (36F). ETA 10:30 ET. MABD 14:00 still good. need to tell customer (Sterling Produce, Greer) before they hear it from receiving. urgency same-day. PRO 7791-44282, BOL SP-2026-05231, PO 990-44712.
+
+Recipient type: **customer (Tier-1 per `config.customer_tiers`)**. Email purpose: **delay/disruption notification with recovery plan**. Reference numbers: PRO 7791-44282, BOL SP-2026-05231, PO 990-44712. Urgency: **same-day, proactive (before consignee escalation)**.
+
+---
+
+**Subject line**
+
+> Delay notice — PRO 7791-44282 / PO 990-44712 — reefer recovered, new ETA 10:30 ET (3.5 hr early to MABD)
+
+**Email body** (155 words — within the customer delay/apology cap of 120–200 words)
+
+> Hi Marcus,
+>
+> Heads-up before your receiving team sees it: PRO 7791-44282 (BOL SP-2026-05231 / your PO 990-44712, DAL → Greer, 38,400 lb organic strawberries) had a reefer-unit failure overnight. Our Geotab temperature alert fired at 01:14 ET; we swapped the trailer to spare tractor #4172 at our Tallapoosa GA drop-yard at 04:30 ET. Pre-cool is back to spec (36°F surface temp, confirmed by the on-site driver pulldown at 05:15 ET; worst-case excursion was 41°F for ~90 minutes — within USDA tolerance for the load class but I am sending the full temperature log to your QA contact at Greer when I send this).
+>
+> **Revised ETA: 10:30 ET, Greer DC dock 4. Your 14:00 ET MABD is held with 3.5 hours of cushion.**
+>
+> No action needed from your side. I will call you at 09:30 ET with a final ETA and confirm the QA paperwork hand-off at the dock.
+>
+> Best,
+> Sarah Mitchell
+> Dispatch Lead | Pinewood Logistics
+> (469) 555-0192 | smitchell@pinewoodlogistics.com
+> Dispatch 24/7: (469) 555-0100
+
+**Pre-send flags**
+
+- [ ] **Confirm Greer DC dock 4 assignment** — the appointment portal shows dock 4 reserved through 12:00 ET; verify the early arrival can still hit dock 4 or whether receiving will float to dock 6
+- [ ] **Send the temperature log separately to QA** — the body promises it; attach the Geotab CSV pull (01:00–05:30 ET window) when you fire this off
+- [ ] **Tier-1 escalation matrix** — Marcus is the day-to-day contact; per `config.escalation_matrix` Tier-1 customers also get a CC to the account manager (D. Pruitt) on disruption notifications. Add D. Pruitt to CC before sending
+- [ ] **External signature variant used** — confirmed correct (`signature_variants.external.dispatch_lead`); not the internal short-form
+
+**Internal notes**
+
+- Category classified as **customer communication → delay notification** (Tier-1 customer + perishable load + active recovery in progress); tone calibrated to the customer-tier rule (warm, lead with the recovery and the MABD-held line; defer the technical detail to the second paragraph; close with the proactive callback commitment)
+- Subject line follows the **delay-notification template** (`Delay notice — [PRO/BOL] — new ETA [Date/time]`) with the MABD-cushion appended because the cushion is the headline the receiving team cares about — that detail is what makes the email triageable without opening it
+- Body length 155 words sits inside the customer-delay/apology cap (120–200) — closer to the upper end because the temperature-excursion detail is load-bearing for a perishable shipment and pruning it would force a follow-up email
+- Saved to `outputs/email-pro-7791-44282-delay-notice-2026-05-26.md` if confirmed.

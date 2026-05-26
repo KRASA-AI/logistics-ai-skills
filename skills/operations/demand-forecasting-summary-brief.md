@@ -4,8 +4,8 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~40 min/cycle"
-version: 1.0
-last_eval_score: null
+version: 1.1
+last_eval_score: 8.7
 ---
 
 # 📈 Demand Forecasting Summary Brief
@@ -65,4 +65,67 @@ You are a demand-and-supply planner translating a forecast into the operational 
 
 ## Example Output
 
-> [This section will be populated by the eval system with a reference example. For now, run the skill with sample input to see output quality.]
+**Scenario:** Weekly S&OP brief for a mid-size 3PL operating mixed parcel + LTL + drayage volumes for two retail and one consumer-electronics customer. Cycle covers four-week forward horizon (2026-05-25 → 2026-06-21) with three drivers in play: Q2 retail-restock (Northeast DC fill), back-to-school early ramp on parcel (West Coast outbound), and post-Lunar-New-Year inbound drayage normalization at LGB / LAX. Forecast grain is lane-week; baseline forecast came from the planner's model on 2026-05-22 EOD; actuals through 2026-05-23 EOD. Audience: ops + procurement + finance, weekly huddle Tuesday 09:00 CT.
+
+---
+
+**Executive summary**
+
+> Four-week forecast (2026-05-25 → 2026-06-21) is broadly on-trend across all three modes, but two lane-weeks need action this week: BOS→PHL LTL is forecasted 162% of prior week (back-to-school early signal on the consumer-electronics account, confirmed driver) and is **48% above primary-carrier MCQ** on weeks of 06-08 and 06-15 — spot exposure ~$11.4K if uncovered. Drayage at LGB→ONT projects 12% below baseline as the post-LNY normalization completes, freeing 28 chassis-days of committed capacity that can be redeployed to PHL→ATL where reefer demand is over-running the routing-guide primary. **One recommended action: open a mini-bid on BOS→PHL LTL for weeks of 06-08 and 06-15 by Thursday EOD to cover the MCQ overage at contract-equivalent rates.** Forecast accuracy on parcel ramp is the weakest spot (MAPE 18.4%, under-forecast bias) and warrants a manual override on the consumer-electronics SKU family before next week's pull.
+
+**Accuracy section**
+
+| Window | MAPE | Bias | Notes |
+|---|---|---|---|
+| Last 4 weeks (parcel — all customers) | 11.2% | +2.1% (slight over) | Within tolerance (config: 15% MAPE, ±5% bias) |
+| Last 4 weeks (LTL — all customers) | 9.8% | +0.4% | Within tolerance |
+| Last 4 weeks (drayage LGB / LAX) | 8.6% | -1.2% | Within tolerance |
+| **Parcel — consumer-electronics SKU family (last 2 wks)** | **18.4%** | **-14.2% (under)** | **Out of tolerance — back-to-school promo on a new SKU not in the baseline; refit needed** |
+| **LTL — BOS→PHL (last 2 wks)** | **22.1%** | **-19.6% (under)** | **Out of tolerance — same back-to-school driver downstream into LTL leg** |
+| Drayage — LGB→ONT (last 2 wks) | 6.4% | +3.8% | Slight over-forecast; post-LNY normalization completing on plan |
+
+**Top movements (next 4 weeks)**
+
+| Rank | Lane / SKU | Wk 1 (06-01) | Wk 2 (06-08) | Wk 3 (06-15) | Wk 4 (06-21) | Δ vs. prior fcst | Capacity / inventory implication |
+|---|---|---|---|---|---|---|---|
+| 1 | LTL BOS→PHL | 22 loads | 38 | 41 | 29 | +162% wk 2, +148% wk 3 | **MCQ breach** wk 2 & 3 (primary contract MCQ 28/wk). Spot exposure ~$11.4K |
+| 2 | Parcel WCD outbound (consumer-electronics) | 4,800 units | 7,200 | 8,100 | 6,400 | +52% (rolling) | Within DC throughput; sort-line OT wk 2 & 3 ~$3.2K |
+| 3 | Drayage LGB→ONT | 86 loads | 79 | 74 | 78 | -12% | Frees 28 chassis-days; PacWest Intermodal commitment can be re-flexed |
+| 4 | Reefer PHL→ATL | 14 loads | 19 | 22 | 18 | +28% | Routing-guide primary at MCQ ceiling wk 3; secondary stack ready |
+| 5 | LTL ATL→MIA | 31 loads | 30 | 28 | 32 | -3% (flat) | Within MCQ; no action |
+| 6 | Parcel Northeast DC fill | 2,100 units | 2,400 | 2,600 | 2,200 | +14% (rolling) | Within DC throughput |
+| 7 | LTL CHI→DAL | 18 loads | 19 | 21 | 20 | +4% | Within MCQ; no action |
+
+**Recommended operational moves**
+
+1. **Allocate capacity — BOS→PHL LTL mini-bid for weeks of 06-08 and 06-15.** Owner: K. Mahoney (procurement). Timeline: post by 2026-05-28 EOD, close 2026-06-02 EOD, award by 2026-06-04. Estimated impact: covers 13 + 13 = 26 loads of MCQ overage at contract-equivalent rates (~$650/load avg vs. $1,090/load spot benchmark on the lane); avoided spot exposure ~$11.4K. *Confidence: high; driver is confirmed and a 2-week window is operationally comfortable for a mini-bid.*
+2. **Re-flex drayage — release 28 chassis-days of committed PacWest Intermodal capacity at LGB→ONT to free working capital.** Owner: R. Singh (drayage desk). Timeline: notice to PacWest by 2026-05-26 EOD per the 7-day flex clause in the 2026 agreement; reallocate freed chassis-days to the PHL→ATL reefer lane via the cross-modal balancing run. Estimated impact: $4.2K saved on committed-but-unused drayage capacity; $1.8K avoided routing-guide-secondary premium on PHL→ATL reefer wk 3. *Confidence: moderate-high; depends on PacWest accepting the flex without arguing the 7-day window.*
+3. **Re-plan labor — add a single Saturday-shift sort line on parcel WCD outbound, weeks of 06-08 and 06-15.** Owner: J. Ortega (WCD ops manager). Timeline: post the shift in the labor pool by 2026-05-29 EOD; confirm with the temp agency by 2026-06-03. Estimated impact: ~$3.2K labor cost; avoided ~$8.4K of pulled-forward-into-Friday OT plus protects on-time on the consumer-electronics account (Tier-1, no missed-MABD slack). *Confidence: high; same playbook ran on the Q4 peak with the same agency.*
+4. **Reset the forecast — manual override on consumer-electronics SKU family (parcel) for the next 4 weeks at +25% over the model baseline.** Owner: D. Lin (demand planning). Timeline: in tonight's run (2026-05-26 EOD) before tomorrow's huddle. Estimated impact: reduces forward MAPE on the SKU family from projected 18% to projected 7%; downstream BOS→PHL LTL signal will tighten in next week's pull. *Confidence: moderate; the override is a placeholder until the planner can re-fit the seasonality term with the new SKU.*
+
+**Confidence note**
+
+- **High confidence:** drayage normalization at LGB→ONT (post-LNY pattern is well-established and the actuals are tracking the seasonal curve); BOS→PHL LTL upside (downstream of a confirmed promo, customer-confirmed PO cadence)
+- **Moderate confidence:** parcel consumer-electronics SKU ramp (new SKU, two weeks of actuals, manual override pending model refit)
+- **Lower confidence — manual review:** PHL→ATL reefer +28% (driver not yet confirmed; could be a one-off retail re-stock or a structural shift to a new produce-season lane — flag for planner follow-up with the customer's procurement contact)
+
+**Ready-to-send short-form update (Slack / email — broader team)**
+
+> *2026-05-26 weekly forecast brief — four-week horizon 05-25 → 06-21.*
+>
+> - **BOS→PHL LTL** is **+162% wk 06-08 and +148% wk 06-15** (back-to-school on the electronics account, driver confirmed). MCQ overage ~26 loads. **Mini-bid posting by Thursday EOD; close 06-02, award 06-04.**
+> - **Drayage LGB→ONT** is **-12%** — frees 28 chassis-days of committed capacity. Releasing to PacWest by EOD today; reallocating to the PHL→ATL reefer overage wk 3.
+> - **Parcel WCD outbound** runs **52% above baseline** wk 2–3 — Saturday sort line going on the labor board this week.
+> - **Forecast accuracy** is mostly within tolerance; **consumer-electronics SKU family is under-forecasting by 14%** — D. Lin posting a manual override tonight before tomorrow's huddle.
+>
+> Questions to procurement, dispatch, and WCD ops by Tuesday 09:00 CT huddle.
+
+**Internal notes**
+
+- **Snapshots:** forecast pull 2026-05-22 23:14 CT (planner's model v4.2.1); actuals pull 2026-05-23 23:30 CT (TMS export, 4-wk window); capacity pull 2026-05-23 EOD (routing-guide v2026-Q2 + committed-drayage register); inventory pull 2026-05-23 EOD (WCD + NE DC, on-hand only — in-transit not netted).
+- **Assumptions made:**
+  - Back-to-school upside on the electronics account is treated as **confirmed driver** based on the customer's 2026-05-20 PO commitment letter and the +52% rolling-4-week trend on the SKU family
+  - PHL→ATL reefer +28% is treated as **unconfirmed driver** pending planner-side check-back with the customer; the recommendation does *not* yet propose a routing-guide refresh on the lane
+  - Drayage flex on the LGB→ONT lane assumes PacWest accepts the 7-day notice per the 2026 agreement; if PacWest pushes back, the fallback is to absorb the 28 chassis-days as paid-and-unused this cycle and revisit the flex clause in the Q3 contract review
+  - MAPE / bias computed at the lane-week grain (consistent with config: `forecast_grain: lane_week`, `planning_horizon_weeks: 4`)
+- **Saved to** `outputs/forecast-summary-brief-2026-05-26.md` (if confirmed).
