@@ -4,8 +4,8 @@ category: _shared
 tools: [claude, chatgpt]
 difficulty: beginner
 time_saved: "~10 min/use"
-version: 2.1
-last_eval_score: null
+version: 2.2
+last_eval_score: 8.8
 ---
 
 # 📝 Meeting Summarizer
@@ -93,3 +93,97 @@ You are a logistics operations professional's AI assistant. Your job is to trans
 - Tensions / open disagreements preserved, not smoothed over
 - Professional formatting appropriate for sharing via email or Slack
 - Saved to `outputs/` if the user confirms
+
+## Reference Example
+
+**Input (raw notes — carrier review meeting):**
+
+- Meeting type: Carrier review (monthly cadence)
+- Audience: Broader ops team
+- Attendees: K. Mahoney (procurement), J. Park (dispatch), L. Suarez (account mgmt), M. Reyes (QA / claims), guest: T. Nguyen (Sapphire Freight Lines VP Ops)
+- Absent but affected: P. Akande (CFO — invoice-accuracy item routed to her)
+- Prior meeting: 2026-05-04 carrier review with Sapphire Freight Lines
+- Notes:
+  - Sapphire Q2 OTP (on-time pickup) 91.2%, OTD (on-time delivery) 88.4% — both below the 93% / 92% contract minimums
+  - Claims: 3 new in last 30 days, 1 above $50K threshold (PRO 992-44017 — pallet jack puncture on a load of refrigeration components, $67K invoice value, T. Nguyen pushing back on liability — says concealed damage notification was day 11, just inside the 15-day window but they want to inspect)
+  - Rate competitiveness: 4 lanes flagged by procurement as 8–14% above market on the May DAT spot index; T. Nguyen says contract was priced on diesel-at-$4.20 baseline, current is $3.65, so they'd accept a fuel-surcharge re-baseline conversation
+  - Contract status: current MSA expires 2026-09-30, renewal discussion needs to start by end of June
+  - T. Nguyen: Sapphire is investing in driver-facing AI dispatch by Q3, expects OTP to lift by 200–300 bps
+  - K. Mahoney: pushed for a 30-day OTP / OTD recovery commitment, T. Nguyen agreed in principle but didn't commit to numbers
+  - L. Suarez: flagged that the Tier-1 customer Halverson had two delay complaints on Sapphire-moved loads in May, including a reefer excursion handled yesterday
+  - M. Reyes: claim on PRO 992-44017 — recommends Sapphire and our internal QA do a joint inspection at the receiver's facility before disposition; T. Nguyen agreed for Thursday 06-04
+  - J. Park: invoice accuracy at 94.1% — three duplicate-detention charges flagged in May, total $1,840; route to P. Akande
+  - Rollover from 2026-05-04: Sapphire was to deliver a QBR-style operations review deck by 2026-05-25 — landed 2026-05-28, three days late but accepted
+  - Carrier-performance scorecard cycle: next run includes Sapphire — pull updated numbers EOD 06-05
+
+**Output (broader-ops audience shape):**
+
+```
+═══════════════════════════════════════════════════════════════
+TL;DR: Sapphire Freight Lines below contract OTP/OTD; one Tier-1
+customer claim above $50K threshold pending Thursday joint
+inspection; rate re-baseline conversation opens via fuel-surcharge
+re-baseline before renewal discussion starts end of June.
+═══════════════════════════════════════════════════════════════
+```
+
+**Summary**
+Monthly carrier review with Sapphire Freight Lines (T. Nguyen, VP Ops). Performance below contract minimums on OTP and OTD; one claim above the $50K threshold pending a Thursday joint inspection; rate-competitiveness conversation reframed around a fuel-surcharge re-baseline rather than a flat rate cut; renewal cycle on the calendar for end-of-June kickoff.
+
+**Key Decisions (DECIDED)**
+
+1. **DECIDED** — Joint inspection on PRO 992-44017 at the receiver Thursday 2026-06-04 (M. Reyes confirmed; T. Nguyen committed). Disposition not pre-decided; both sides reserve position pending inspection.
+2. **DECIDED** — Sapphire QBR deck (rolled over from 2026-05-04) accepted as delivered 2026-05-28 — three days late but acceptable for this cycle. No precedent set for future cadence.
+3. **DECIDED** — Three duplicate-detention charges totaling $1,840 routed to P. Akande (CFO) for invoice-accuracy disposition; J. Park to forward the line-item evidence by EOD 2026-06-02.
+
+**Action Items**
+
+1. **J. Park** — Forward the three duplicate-detention line-items ($1,840) to P. Akande by EOD 2026-06-02 for invoice-accuracy disposition.
+2. **M. Reyes** — Lead joint inspection at receiver, Thursday 2026-06-04 0900 ET, on PRO 992-44017. Pre-stage Geotab + photo evidence packet by 2026-06-03 EOD.
+3. **K. Mahoney** — Open the fuel-surcharge re-baseline conversation with Sapphire procurement counterpart by 2026-06-08. Frame as MSA addendum, not a renegotiation.
+4. **L. Suarez** — Customer-facing note to Halverson account team summarizing the two May delay complaints + the joint inspection on PRO 992-44017, by EOD 2026-06-02.
+5. **K. Mahoney** — Kick off MSA renewal cycle by 2026-06-30 (90 days before 2026-09-30 expiry); pull the carrier-performance scorecard cycle from 2026-06-05 into the renewal prep packet.
+6. **Owner: TBD — suggested: K. Mahoney** — Draft a 30-day OTP/OTD recovery commitment template that we use with all carriers below contract minimums; this is the second carrier this quarter in the same situation.
+
+**Shipment / Load-Specific Notes**
+
+- **PRO 992-44017** — $67K invoice, refrigeration components, pallet-jack puncture damage at receiver, concealed-damage notification day 11 (inside 15-day Carmack window). Joint inspection 2026-06-04 0900 ET. Disposition not pre-decided.
+- **Halverson Tier-1 May complaints** — Two delay complaints on Sapphire-moved loads; one additional excursion incident yesterday (cross-reference: PRO 884-71203 handled via `shipment-exception-handler.md` 2026-06-01). Pattern flag for next carrier scorecard.
+
+**Metrics / Data Points (Sapphire, Q2 2026)**
+
+- **OTP**: 91.2% (contract minimum 93%) — 180 bps below
+- **OTD**: 88.4% (contract minimum 92%) — 360 bps below
+- **Claims**: 3 new in last 30 days; 1 above $50K threshold
+- **Invoice accuracy**: 94.1%; $1,840 in duplicate-detention charges identified in May
+- **Rate competitiveness**: 4 lanes flagged at 8–14% above DAT May spot index; diesel baseline $4.20 vs. current $3.65
+
+**Open Issues (PROPOSED + DISCUSSED)**
+
+- **PROPOSED** — Sapphire AI dispatch rollout (Q3 2026, T. Nguyen) expected to lift OTP 200–300 bps. Discussed; no decision on whether we factor this into the renewal pricing conversation. Next decision point: late July, post-Q3 deployment confirmation.
+- **PROPOSED** — 30-day OTP/OTD recovery commitment for Sapphire. T. Nguyen agreed in principle but did not commit to numbers. Next decision point: 2026-06-15 follow-up call (K. Mahoney to schedule with carrier).
+- **DISCUSSED** — MSA renewal (expires 2026-09-30). Parked for the June 30 kickoff per the rollover schedule.
+
+**Tensions / Open Disagreements**
+
+- **Claims disposition on PRO 992-44017** — T. Nguyen pushing back on Sapphire liability; pre-inspection position is that concealed-damage notification at day 11 of 15 is within the window but they want forensic review. Our position (M. Reyes): physical evidence + Geotab log are consistent with in-transit damage; we're not pre-deciding but we're not pre-conceding either. Resolution path: joint inspection 2026-06-04.
+- **Recovery-commitment numbers** — K. Mahoney pushed for a numeric 30-day OTP/OTD commitment; T. Nguyen agreed in principle, declined to commit to numbers in the room. Parked, not resolved.
+
+**Compliance / Safety / Financial Flags**
+
+- **Financial flag (claims_threshold)** — PRO 992-44017 at $67K crosses the $50K Tier-1 carrier-review threshold. Triggers Q3 carrier-performance-scorecard review path with M. Reyes and K. Mahoney as named co-owners. P. Akande to be looped in if the Thursday inspection lands as Sapphire-liable.
+- **Financial flag (invoice accuracy)** — $1,840 in duplicate-detention charges routed to P. Akande.
+
+**Rollover from Prior Meeting (2026-05-04)**
+
+- **Closed** — Sapphire QBR-style ops review deck (delivered 2026-05-28, 3 days late but accepted)
+- **At risk → now decided** — Joint inspection on PRO 992-44017 (was open as a procedural question; now DECIDED for 2026-06-04)
+- **Slipped to this cycle** — Rate-competitiveness conversation (was a 2026-05-04 mention; now framed as a fuel-surcharge re-baseline action with K. Mahoney owner and 2026-06-08 deadline)
+
+**Next Meeting**
+
+2026-07-06 (monthly cadence). Prep: scorecard cycle 2026-06-05 results, joint-inspection disposition from 2026-06-04, fuel-surcharge re-baseline status from K. Mahoney, MSA renewal kickoff materials from end of June.
+
+---
+
+*Synthetic example — Sapphire Freight Lines, K. Mahoney / J. Park / L. Suarez / M. Reyes / T. Nguyen / P. Akande / D. Tovar / Halverson Manufacturing contacts, PRO 992-44017 / PRO 884-71203, MSA expiration date, master-agreement clause references, and DAT spot-index numbers are illustrative. DAT is a real freight-rate index vendor; the May spot-index numbers cited are not from a real DAT report.*

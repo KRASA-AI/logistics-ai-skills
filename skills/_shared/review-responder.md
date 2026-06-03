@@ -4,8 +4,8 @@ category: _shared
 tools: [claude, chatgpt]
 difficulty: beginner
 time_saved: "~10 min/use"
-version: 2.1
-last_eval_score: null
+version: 2.2
+last_eval_score: 8.8
 ---
 
 # ⭐ Review Responder
@@ -107,3 +107,35 @@ You are a logistics company's customer experience AI assistant. Your job is to d
 - **Internal notes** clearly separated, with pattern flag + escalation level if applicable
 - **Legal review flag** if the review crosses `config.claims_threshold` or involves a safety / compliance event
 - Saved to `outputs/` if the user confirms
+
+## Reference Example
+
+**Input:**
+
+- **Platform:** Google Business Profile
+- **Star rating:** 2
+- **Reviewer name:** Jordan B.
+- **Review text:** "Used these guys for a delivery to my shop in Cary NC. Pickup was fine. Then nothing for two days. No tracking updates, nobody answered the dispatch line on Friday afternoon. Driver finally showed up Tuesday — pallet was sitting in a yard somewhere apparently — and the guy was clearly annoyed I asked him to put it inside the bay door like the BOL said. I get that stuff happens but the communication was the worst part. Would not use again."
+- **Context (internal):** PRO 776-30811, Cary NC last-mile delivery on a 4-pallet partial. Dispatch confirms there was a Friday afternoon staffing gap (one dispatcher off, the backup line wasn't being monitored — known process issue raised in 2026-05-15 ops standup). The pallet sat in the Charlotte cross-dock yard 2026-05-29 evening through 2026-06-01 morning because the original outbound run was reorganized for a higher-priority Tier-1 load and the partial wasn't re-queued. Driver name on file but not surfaced publicly. No claim filed. Delivery value $1,840 (below `config.claims_threshold`).
+- **Corpus (optional):** Two other Cary NC reviews in the last 30 days (2026-05-08 3-star, 2026-05-22 2-star) both mention "no tracking updates" specifically on Friday afternoon pickups. Pattern.
+
+**Output**
+
+*Public response (Google Business Profile — 3-sentence range, 2-star strategy: lead with empathy, address the specific complaints, move offline):*
+
+> Jordan — we're sorry this delivery didn't meet our standard, and you're right that the communication gap is the part we own. The Friday afternoon visibility issue you described is something we've been working to close on the last-mile lanes, and the way your delivery was handled at the receiving end doesn't reflect how we want every shipment to land. Please reach our customer-care team at [contact channel from `config`] — we'd like to walk through what happened with you directly and make sure the Cary NC service shape is right going forward.
+
+*Internal notes (separated, not for public posting):*
+
+- **Maps to known operational issue:** Yes — Friday afternoon dispatch-coverage gap was raised in the 2026-05-15 ops standup and the backup-line monitoring SOP was supposed to land 2026-05-29 but slipped.
+- **Pattern flag (corpus surfacing):** Three Cary NC reviews in 25 days (2026-05-08 / 2026-05-22 / 2026-06-01) all citing Friday afternoon tracking-update gaps. This is now a confirmed pattern rather than a one-off — route to operations standup for the next cycle. Recommend: prioritize the backup-line monitoring SOP rollout and re-queue the cross-dock partial-load process so partials don't deprioritize behind Tier-1 loads without a tracking-update touch.
+- **Recommended internal follow-up:**
+  1. L. Suarez (account team) reach Jordan B. via the public-listing contact channel within 24 hr; offer the next shipment monitored personally + a service-recovery credit at her discretion (under the `config.customer_tiers` discretionary ceiling, no public dollar mention).
+  2. J. Park (dispatch) close the backup-line monitoring SOP this week (was due 2026-05-29).
+  3. K. Mahoney (procurement) flag the Cary NC last-mile lane in the next carrier-performance scorecard cycle (2026-06-05) — three reviews on the same lane in 25 days is a scorecard-level signal.
+- **Escalation level:** Operations standup (per `config.escalation_matrix` — recurring service-pattern, no safety / compliance / claims-above-threshold trigger).
+- **Legal review:** Not required — value $1,840 is below `config.claims_threshold`, no liability admitted in public response (sorry-this-didn't-meet-our-standard is a service apology, not a liability admission), no claim open or filed, no named driver or employee, no PRO referenced publicly, no specific dollar amounts.
+
+---
+
+*Synthetic example — Jordan B. (reviewer), PRO 776-30811, Cary NC last-mile lane, internal contacts L. Suarez / J. Park / K. Mahoney, 2026-05-15 ops standup, $1,840 delivery value, and the three-review pattern are illustrative. The corpus pattern and SOP-slip detail are correctly-structured operations primitives with generic surrounding content.*
