@@ -4,8 +4,8 @@ category: sales
 tools: [claude, chatgpt]
 difficulty: beginner
 time_saved: "~20 min/quote"
-version: 2.0
-last_eval_score: null
+version: 2.1
+last_eval_score: 8.9
 ---
 
 # 💰 Freight Quote Response Drafter
@@ -65,9 +65,99 @@ You are a logistics sales specialist's AI assistant drafting a single-quote resp
 - A **Trust and Margin Check** subsection listing any item that did not pass the check
 - Saved to `outputs/` if the user confirms, with the customer name and lane in the filename
 
-## Example Output
+## Reference Example
 
-> [This section will be populated by the eval system with a reference example. For now, run the skill with sample input to see output quality.]
+**Input (RFQ + cost basis + customer context):**
+
+> Inbound RFQ from Halverson Manufacturing (Tier-1, existing-active). Single-shipment spot TL. Origin Charlotte NC 28202 → Dallas TX 75201, dry van, 42,000 lbs palletized industrial components, class N/A (full TL). Pickup 2026-06-25 (appointment), delivery 2026-06-29 MABD (hard appointment, receiving M–F 0700–1500). No hazmat. Customer signaled a target around $2,150 and named that a competitor quoted "low $2,100s."
+> Cost basis: carrier linehaul $1,685 (936 practical mi), fuel surcharge cents-per-mile DOE-indexed (06-22 national avg, $0.38/mi → $356), accessorials available: detention $60/hr after 2 hrs free, driver-assist/lumper at cost, appointment $0 (standard). Margin band: floor 12% / target 18% / stretch 24% on this lane. Validity default 7 days spot. Approval: new first quote auto-approved to floor; below floor needs M. Reyes (sales mgr).
+> Service alternatives the company can run: intermodal swap CLT→DAL (−$390, +34 hrs transit); guaranteed-window TL appointment-firm (+$120).
+
+**Classification:** Customer: Halverson Mfg (Tier-1, existing-active) · Lane: CLT 28202 → DAL 75201 · Mode: Dry-van TL · Service tier: Standard (alts offered) · Validity: 7 days · Margin band: floor 12 / target 18 / stretch 24
+
+**Customer-Facing Quote Response (email)**
+
+> **Subject: Quote — Charlotte → Dallas dry van TL — valid through 2026-06-29**
+>
+> Hi [Halverson contact],
+>
+> Thanks for the opportunity on this Charlotte-to-Dallas move. Here's our quote for the 42,000-lb dry-van load, pickup 6/25 and delivery by your 6/29 receiving appointment:
+>
+> **All-in rate: $2,495** — covering line-haul and fuel. Transit: 2 days in-transit, delivering inside your M–F 0700–1500 window with a firm appointment.
+>
+> **What's included / what's billed by event:**
+> - Line-haul (936 mi, practical): $2,139
+> - Fuel surcharge (DOE national avg, week of 6/22, $0.38/mi): $356 — *moves with the published DOE index if it resets inside the validity window; we'll hold the rate otherwise*
+> - Appointment scheduling: included
+> - Detention: $60/hr after 2 hours free at pickup or delivery (billed only if incurred)
+> - Driver-assist/lumper: at documented cost, only if requested at the dock
+>
+> **Two alternatives if they fit your plan better:**
+> - **Intermodal swap (CLT–DAL): −$390 ($2,105 all-in), +34 hours transit.** Lands ahead of your 6/29 window if we pick up 6/24.
+> - **Guaranteed appointment-firm TL: +$120 ($2,615 all-in).** Adds a delivery-window guarantee with a service credit if we miss.
+>
+> On this lane we're running **98% on-time over the last 90 days** and carry single-source dispatch, so you have one number to call from tender to POD.
+>
+> Rate is good through **6/29**. Reply to confirm and we'll tender same-day and send your pickup number by 2:00 PM ET. Happy to walk through the intermodal option by phone if the timing helps.
+
+**Pricing Breakdown**
+
+```
+Line-haul (936 mi practical, incl. margin)       $2,139.00
+Fuel surcharge ($0.38/mi DOE, wk 06-22)            $356.00   ← index + date cited
+Appointment scheduling                              incl.
+Detention (event-driven)              $60/hr after 2 hrs free  *not in all-in*
+Driver-assist / lumper (event-driven)        at documented cost  *not in all-in*
+─────────────────────────────────────────────────────────────
+ALL-IN QUOTE OF RECORD                           $2,495.00
+```
+
+**Service-Tier Alternatives**
+
+| Option | All-in | Δ vs. standard | Transit | Trade |
+|---|---|---|---|---|
+| Standard dry-van TL (quoted) | $2,495 | — | 2 days | Baseline |
+| Intermodal swap | $2,105 | −$390 | +34 hrs | Cost win; needs 6/24 pickup to clear MABD |
+| Guaranteed appointment-firm | $2,615 | +$120 | 2 days | Adds window guarantee + miss credit |
+
+**Value-Add Block** (lane/customer-specific)
+
+- 98% documented on-time on CLT→DAL over trailing 90 days — relevant because the 6/29 MABD is a hard receiving appointment.
+- Single-source dispatch from tender to POD — one contact, no broker hand-off, since Halverson has flagged tracking-call friction before.
+
+**Validity and Price Protection**
+
+- Validity: 7 days, through 2026-06-29.
+- Fuel mechanism: DOE national-average cents-per-mile, week-of-6/22 basis cited; resets with the published index inside the window — no re-quote conversation needed.
+- No GRI exposure on a single-shipment spot; accessorial schedule is fixed for this load.
+
+**Internal Margin Note** (not for the customer)
+
+```
+Cost basis:   linehaul $1,685 + fuel $356 = $2,041 landed cost
+Quote:        $2,495 all-in   →   margin $454 / 18.2%   (at TARGET band; floor 12% = $2,287)
+Floor / Target / Stretch:   $2,287 (12%) / $2,408 (18%) / $2,531 (24%)
+Competitive:  customer signaled ~$2,150 target, "competitor low $2,100s" — almost certainly
+              an intermodal or LTL-consolidated number, NOT a 2-day dry-van TL. The intermodal
+              alt ($2,105) meets that price on a like-for-like service, which reframes the
+              comparison instead of discounting the TL to chase it.
+Approval:     auto-approved (Tier-1 existing, above floor, at target). No M. Reyes sign-off needed.
+Risk:         (1) detention drift at Dallas receiver if the 0700–1500 window backs up — 2 hrs
+              free, billed after; (2) intermodal alt only clears the 6/29 MABD with a 6/24
+              pickup — do not present it as same-timing.
+```
+
+**Trust and Margin Check**
+
+- ✅ Every rate component sourced (linehaul mi-based, fuel DOE-dated, accessorials per-event with trigger).
+- ✅ No hidden "all-in" — detention and lumper broken out as event-driven, not buried.
+- ✅ All three service commitments are runnable (2-day transit, appointment-firm, intermodal timing gated on 6/24 pickup).
+- ✅ Quote at target margin, above floor — no approver required.
+- ⚠️ **Flag:** the competitor's "low $2,100s" is not like-for-like with a 2-day dry-van TL. The reply reframes via the intermodal alternative rather than discounting the TL — confirm with the AM before any verbal counter, and do not drop the TL below the $2,408 target to match a slower-service number.
+
+---
+
+*Synthetic example — Halverson Manufacturing, the CLT→DAL lane rates, the competitor signal, and the cost basis are illustrative and continuous with the repo's synthetic operator world. DOE is a real fuel index and the accessorial structure is realistic; the specific rates, mileage, and on-time figure are synthetic, not from a real tender.*
 
 ## Notes for Maintainers
 
