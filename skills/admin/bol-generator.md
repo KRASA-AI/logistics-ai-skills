@@ -4,7 +4,7 @@ category: admin
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~15 min/BOL"
-version: 2.1
+version: 2.2
 last_eval_score: 8.8
 ---
 
@@ -39,19 +39,28 @@ You are a freight-documentation specialist's AI assistant. Your job is to produc
 
 **Before you start:**
 
-- Load `config.yml` from the repo root for company name / address, default SCAC list, default freight terms, NMFC subscription status, and hazmat emergency-response contract vendor (Chemtrec account # if applicable)
+- Load `config.yml` from the repo root and pull the BOL-defaults profile so the document is pre-populated from the company's standing setup rather than re-entered each time:
+  - `company` block → shipper-of-record legal name, address, SCAC (if the company is also a carrier), default dock hours, and the shipper-certification signatory roster (`bol.signatories` — the hazmat-trained and non-hazmat names authorized to sign, so the certification block fills with a real name instead of a blank)
+  - `bol.numbering_scheme` → the company's BOL-number format (e.g., `BOL-{YYYY}-{MMDD}-{customer3}-{seq}`) so the BOL # is generated to the house standard, not invented
+  - `bol.default_carriers_by_lane` and `bol.scac_list` → the carrier + SCAC the company tenders by lane/service, so the carrier block pre-fills when the user names a lane instead of a carrier
+  - `bol.default_freight_terms` → prepaid / collect / third-party default, plus the standing third-party-payor block (name, address, account #) for collect/3rd-party customers
+  - `bol.standing_accessorials` → per-customer or per-consignee standing accessorial defaults (e.g., "Midwest Retail DC always requires liftgate + 2-hr notify"), so recurring lanes pre-populate their accessorial codes
+  - `bol.nmfc_subscription` → subscription status + tier (drives whether NMFC sub-classes can be confirmed vs. only proposed) and the company's saved NMFC map for its top recurring SKUs (so repeat commodities classify from the company's own confirmed history, not a fresh guess)
+  - `bol.declared_value_rule` → the company's default declared-value / released-value posture and any per-customer insurance add-on rule
+  - `bol.hazmat_vendor` → hazmat emergency-response contract vendor and account # (Chemtrec or equivalent) so the 24/7 ERG number fills automatically on hazmat moves
+  - Any field the user supplies on the specific shipment overrides the config default; note in the gap list when a config default was used so the clerk can confirm it still applies
 - Reference `knowledge-base/terminology/` for correct terms (NMFC, freight class, density, stowability, handling, liability, SCAC, Pro #, VICS BOL)
 - Reference `knowledge-base/regulations/` for hazmat marking requirements (49 CFR 172.200–172.205) and the shipper's-certification wording
 - Use the company's communication tone from `config.yml` → `voice` for any cover-note or shipper-instructions text
 
 **Process:**
 
-1. **Validate the commodity and classify** — For each freight line, compute density (lb/ft³) from the dimensions and weight. Cross-check the stated freight class against the density band; flag mismatches. If an NMFC # is missing, propose the most likely match from the commodity description and note it as proposed, not confirmed. Never output a class without either an NMFC reference or a "CLASS TBD — confirm with carrier" flag
+1. **Validate the commodity and classify** — For each freight line, compute density (lb/ft³) from the dimensions and weight. Cross-check the stated freight class against the density band; flag mismatches. Before guessing, check the commodity against the company's saved NMFC map in `config.yml` (`bol.nmfc_subscription.saved_map`) — for recurring SKUs the company ships, this yields a class the company has already confirmed, which can be marked *confirmed-from-company-history* rather than *proposed*. If an NMFC # is missing and the commodity is not in the saved map, propose the most likely match from the commodity description and note it as proposed, not confirmed. Never output a class without either an NMFC reference or a "CLASS TBD — confirm with carrier" flag
 2. **Sanity-check weights and counts** — Confirm total piece count, total handling-unit count, and total weight add up across lines. Flag weight totals that look round-number-suspicious for the commodity (often a re-weigh trigger)
 3. **Resolve hazmat** — If any line is hazmat, build the shipper's-declaration block exactly once per UN#: "UN#### , Proper Shipping Name, Class X, Packing Group Y, Quantity". Include the 24/7 emergency response number and the shipper's-certification statement. Confirm that a hazmat-trained signatory name is available; if not, flag the BOL as not-releasable until provided
 4. **Assemble the BOL** — Populate the VICS-aligned section order: header (BOL #, date, carrier + SCAC, Pro #) → shipper → consignee → third-party-payor → special instructions → freight-charge terms (prepaid / collect / third-party) → commodity detail table → hazmat declaration (if any) → accessorial codes → declared value / COD → shipper's certification and signature lines → carrier pickup signature line
 5. **Populate the commodity detail table** — Columns: Handling Unit Qty | HU Type | Package Qty | Package Type | Weight | HM (Y/N) | Commodity Description | NMFC # | Class. One row per SKU / class break. Subtotal weight and HU count at the bottom
-6. **Draft accessorial codes** — Translate plain-English special instructions into standard accessorial codes (LIFT, INSDEL, RESDEL, NOTIFY, LTDACC, SORT, PROFRZ, etc.) where carrier-specific codes are known; otherwise list the accessorial in plain English and flag "carrier-coded at rating"
+6. **Draft accessorial codes** — Translate plain-English special instructions into standard accessorial codes (LIFT, INSDEL, RESDEL, NOTIFY, LTDACC, SORT, PROFRZ, etc.) where carrier-specific codes are known; otherwise list the accessorial in plain English and flag "carrier-coded at rating". First apply any standing accessorial defaults from `config.yml` (`bol.standing_accessorials`) keyed to this consignee or lane — e.g., a consignee flagged as no-dock-high pre-populates DLIFT + NOTIFY — so recurring sites carry their known requirements without re-entry. Mark config-sourced accessorials in the gap list as "standing default — confirm still applies"
 7. **Prepare the release checklist** — Before handing the BOL to the driver: BOL # recorded, Pro # space is present (blank or filled), hazmat block matches the freight (if any), third-party-payor account # filled (if applicable), all weights match the pallet scale, shipper-of-record signature line present, driver signature line present, two copies at minimum (shipper retains, driver carries; original + image to carrier TMS)
 8. **Write the one-line handoff note** — A short note to the warehouse / shipping clerk: "BOL 874621 ready for XPO pickup 04/14 14:00–16:00. 6 pallets, 2,240 lb, 2 class breaks (class 70 + class 125). No hazmat. Liftgate delivery required."
 
@@ -189,3 +198,11 @@ Piece count confirmed at pickup: _______ pallets / _______ cartons
 **One-line handoff note to warehouse / shipping clerk**
 
 > BOL-2026-0511-ACM-0074 ready for EXLA pickup 05/12 08:00–10:00 CT. 6 pallets, 2,400 lb, 2 class breaks (class 55 brake pads + class 100 corrugated). No hazmat. Liftgate delivery required at Columbus. Confirm pallet weights on dock scale before driver signs.
+
+*In this example the BOL number was generated to the house `bol.numbering_scheme` (`BOL-{YYYY}-{MMDD}-{customer3}-{seq}` → `BOL-2026-0511-ACM-0074`), the shipper block and signatory (D. Hoffman) pulled from `config.yml` rather than re-keyed, the DLIFT + NOTIFY accessorials applied from the Columbus consignee's `bol.standing_accessorials` entry, and both class breaks confirmed from the company's saved NMFC map — each config-sourced field is echoed in the gap list as "confirm still applies."*
+
+## Configuration Reference
+
+- `config.yml` — `company.name` / `company.address` / `company.scac` (shipper-of-record header), `bol.signatories` (hazmat-trained + non-hazmat certification signatory roster), `bol.numbering_scheme` (house BOL-number format), `bol.scac_list` and `bol.default_carriers_by_lane` (carrier + SCAC pre-fill by lane/service), `bol.default_freight_terms` (prepaid / collect / third-party default) and the standing third-party-payor block, `bol.standing_accessorials` (per-consignee / per-lane standing accessorial defaults), `bol.nmfc_subscription` (subscription status + tier + `saved_map` of confirmed classes for recurring SKUs), `bol.declared_value_rule` (default declared/released-value posture + per-customer insurance add-on), `bol.hazmat_vendor` (Chemtrec-or-equivalent account # for the 24/7 ERG number), `voice` (tone for cover-note / shipper-instructions text). Shipment-specific input always overrides a config default; every config-sourced field is surfaced in the gap list as "confirm still applies."
+- Knowledge base — `knowledge-base/terminology/` (NMFC, freight class, density, stowability, SCAC, Pro #, VICS BOL definitions), `knowledge-base/regulations/` (49 CFR 172.200–172.205 hazmat marking + shipper's-certification wording)
+- Sibling skills — `skills/admin/compliance-document-checker.md` (pre-release hazmat-BOL compliance review of the document this skill produces), `skills/admin/claims-documentation-builder.md` (uses the BOL as the controlling tender-condition exhibit when a loss claim follows)

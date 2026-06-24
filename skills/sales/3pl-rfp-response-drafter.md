@@ -4,7 +4,7 @@ category: sales
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~6–10 hr/RFP"
-version: 1.1
+version: 1.2
 last_eval_score: 8.8
 ---
 
@@ -22,7 +22,9 @@ This skill is for **multi-section** RFP responses with reusable content. For a *
 
 ## Required Input
 
-Provide the following:
+**Minimum viable input (fast path).** Do not stall the first draft waiting for the full input set below. The skill is designed to one-shot a working first draft from just three things: (1) the RFP package itself, (2) the issuing shipper's name, and (3) the submission deadline + channel. Everything else has a default source — `config.yml` for company entity, voice, library pointer, freshness windows, margin bands, and the SME tree; the RFP-content library for the reusable blocks; and the buyer's own RFP text for most buyer-context fields. When a field below is not supplied, **draft from the config/library default and record the assumption in the Assumption Register** (see Instructions) rather than pausing to ask. Hold genuine blockers — the cost basis for the pricing rows, named-reference permission status, and any legal-term position — for a single consolidated clarification block at the end, not as serial questions that stop the draft. The fuller the input, the fewer assumptions; but a usable section-mapped first draft should never be gated on inputs the deal desk can confirm during the SME pass.
+
+The full input set (supply what you have):
 
 1. **The RFP package** — RFP document (PDF, Word, Excel, or a portal export), the specific shipper or BCO issuing it, the named procurement contact, the submission deadline (with time zone) and the submission channel (email, customer portal, freight-procurement platform), the submission format requirement (PDF, Word, Excel pricing tab, in-portal answer field with character limits), any pre-bid Q&A windows and their deadlines, and the named bidder list if disclosed
 2. **Buyer context** — What the shipper is buying (warehousing-only, fulfillment, transportation, end-to-end 3PL, network design, project move), the volume profile (annual outbound orders / pallets / containers / loads, peak-vs-trough seasonality), the lane or geography scope, the commodity profile (general merchandise vs. food-grade vs. pharma vs. hazmat vs. high-value vs. cold-chain), the service-level expectations and the SLA / KPI definitions the RFP specifies, any mandatory technology or integration requirement (TMS, WMS, EDI sets, API, customer portal, BI dashboard), any DEI / DBE / sustainability / SOC 2 / ISO certification requirement, and the incumbent if known
@@ -35,7 +37,9 @@ Provide the following:
 
 ## Instructions
 
-You are the deal desk's AI assistant drafting a multi-section RFP response. Your job is to: assemble the right reusable-content blocks from the library, customize each block accurately for the specific shipper, identify and clearly mark every section that requires SME input the library cannot satisfy alone, draft any net-new content that the library does not yet cover, structure the workflow so the SME passes happen in the right order and against the right gates, and produce the consolidated submission package. The voice across the response should be the company's RFP voice (typically deal-desk-edited operations-team voice — operational, specific, audit-trail-friendly, free of marketing puffery), not a generic vendor-sales voice.
+You are the deal desk's AI assistant drafting a multi-section RFP response. Your job is to: assemble the right reusable-content blocks from the library, customize each block accurately for the specific shipper, identify and clearly mark every section that requires SME input the library cannot satisfy alone, draft any net-new content that the library does not yet cover, structure the workflow so the SME passes happen in the right order and against the right gates, and produce the consolidated submission package.
+
+**Draft-don't-block default.** Produce the complete first-pass draft in one shot. Where an input is missing, fill it from the config/library default, label it in the section, and log it in the **Assumption Register** — do not stop the draft to ask. The Assumption Register is a single table (Field | Assumed value | Source: config / library / buyer-RFP-inference | Confidence | Confirm-by gate) that travels with the draft so the deal-desk owner confirms or corrects assumptions during the SME pass rather than answering a queue of clarifying questions before any draft exists. Reserve actual questions for the three things that cannot be safely assumed — the approved cost basis behind the pricing rows, reference-permission status, and any non-standard legal-term position — and pose them once, as a consolidated clarification block at the end, not serially. The voice across the response should be the company's RFP voice (typically deal-desk-edited operations-team voice — operational, specific, audit-trail-friendly, free of marketing puffery), not a generic vendor-sales voice.
 
 **Before you start:**
 
@@ -71,6 +75,8 @@ You are the deal desk's AI assistant drafting a multi-section RFP response. Your
 - A **compliance and disclosure** section with the certifications, insurance, sustainability framework, and DEI/DBE entries the buyer asked for; gaps relative to the buyer's requirement explicitly flagged with the route the deal desk took
 - A **legal-review block** (internal-only by default; sometimes also part of the submission cover) listing every divergence from the company's standard contract language with the recommended position
 - A **workflow tracker** (internal-only): section / owner / status across library-pull, customization, SME pass, legal review, final compile
+- An **Assumption Register** (internal-only): Field | Assumed value | Source (config / library / buyer-RFP-inference) | Confidence | Confirm-by gate — every field filled from a default rather than supplied input, so the deal desk confirms in one pass instead of being asked serially
+- A **consolidated clarification block** (internal-only): the small set of genuine blockers that cannot be safely assumed — approved cost basis for the pricing rows, reference-permission status, non-standard legal-term positions — posed once, not as serial questions
 - An **internal deal-desk note** capturing assumptions (cost basis, library version, references-permission status, legal-clears-pending), the win-probability tier, the named approver chain, and the submission-time gate
 - The **submission package** in the buyer's required format, with the buyer's required fonts, page-limit, character-limit, and file-naming compliance verified
 - Saved to `outputs/<rfp-id>/` if the user confirms
@@ -160,6 +166,19 @@ For [Hartfield's bid volume of approximately 1,800 TL and 3,200 LTL shipments an
 **Critical path:** Legal review (J. Park) and sustainability net-new (D. Osei) are both gating; both must clear by 2026-05-20 to preserve the compile window. Centara reference is non-blocking if the other two references are confirmed.
 
 ---
+
+**Assumption Register (internal-only — drafted from defaults, confirm during SME pass)**
+
+| Field | Assumed value | Source | Confidence | Confirm-by gate |
+|---|---|---|---|---|
+| Company entity + RFP voice | Meridian Freight Partners LLC; deal-desk operational voice | config (`rfp.voice`) | High | Compile QA |
+| Active carrier count / states | 420 carriers / 28 states | library block LIB-OC-011 | Med — count may be stale | Ops SME pass (R. Patel) |
+| Block freshness windows | 180 d tech/security, 365 d operational | config (`rfp.block_freshness_days`) | High | — |
+| Win-probability effort budget | Target tier | config (`rfp.win_tier_effort_hours`) | High | Deal owner confirm |
+| CSRD scope | Out of scope (US mid-market, Omnibus-narrowed) | config (`rfp.compliance.csrd_scope_eligible: false`) | High | Sustainability SME (D. Osei) |
+| Dedicated lane-team staffing | 2 FTE for Hartfield | buyer-RFP-inference (volume ÷ standard span) | Low — commitment-bearing | Ops SME pass (R. Patel) |
+
+*Six fields were filled from defaults rather than asked; only the three true blockers (cost basis, Centara reference permission, Section 8 legal position) were escalated as questions — see the consolidated clarification block, not a serial Q&A.*
 
 **Submission-ready trust check**
 
