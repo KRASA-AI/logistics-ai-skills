@@ -4,7 +4,7 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~45 min/week"
-version: 1.1
+version: 1.2
 last_eval_score: 8.9
 ---
 
@@ -34,21 +34,25 @@ You are a dispatch planner focused on reducing empty miles without breaking HOS 
 
 **Before you start:**
 
-- Load `config.yml` for default deadhead tolerance, minimum backhaul RPM, and preferred sources
+- Load `config.yml` and read the `backhaul.*` defaults profile (detailed in **Configuration Reference** below). When present it supplies the values that are stable week to week — deadhead tolerance and minimum all-in RPM (by equipment class where the fleet sets them differently), all-in cost per mile by equipment class, the domicile and home-time policy, the preferred boards and broker partners by region, the committed-pool shippers with their standing return-lane rates, the lane blacklist, the benchmark source, and the fleet type. A week's-input value always overrides the matching config default; record which values came from config in the internal-notes block
 - Reference `knowledge-base/terminology/` for correct terms (deadhead, backhaul, triangulation, headhaul, RPM, HOS 11/14/70, domicile, tender)
-- Note whether the fleet operates regional, OTR, or dedicated — the triangulation logic differs
+- Read `backhaul.fleet_type` (regional / OTR / dedicated) — the triangulation logic differs by type and is applied in step 4. If config does not set it, infer from the load list and state the inference
 
 **Process:**
 
 1. **Group drops by region and day** — Cluster the outbound list into drop regions (3-digit ZIP or commercial market) and by delivery day so pairs of trucks finishing in the same area can share backhaul opportunities
-2. **Identify the deadhead exposure** — For each drop, estimate empty miles to the next likely origin (domicile, next committed pickup, or nearest known freight source). Rank drops by deadhead dollars at risk (empty miles × estimated cost per mile from `config.yml`)
-3. **Score backhaul candidates** — For each high-exposure drop, propose 2–3 candidate backhaul lanes using load-board, broker partner, and committed-pool data. Score each candidate on:
-   - Deadhead-in miles (drop → pickup)
+2. **Identify the deadhead exposure** — For each drop, estimate empty miles to the next likely origin (domicile from `backhaul.domicile`, next committed pickup, or nearest known freight source). Rank drops by deadhead dollars at risk (empty miles × the all-in cost per mile for that truck's equipment class from `backhaul.cost_per_mile`, falling back to the fleet default where a class isn't itemized)
+3. **Score backhaul candidates** — For each high-exposure drop, propose 2–3 candidate backhaul lanes using the boards and broker partners in `backhaul.sources` for the drop region plus the committed-pool shippers in `backhaul.committed_pool` (apply their standing return-lane rate where the drop matches a pool lane). Score each candidate on:
+   - Deadhead-in miles (drop → pickup), measured against `backhaul.deadhead_tolerance`
    - Pickup window feasibility given HOS and unload finish time
-   - Estimated all-in RPM vs. minimum threshold
+   - Estimated all-in RPM vs. the `backhaul.min_rpm` floor for that equipment class
    - Destination usefulness (does it set up the next committed move or land at domicile?)
    - Source reliability (committed shipper > preferred broker > spot board)
-4. **Build triangulation plans where they pay** — When a single backhaul does not get the truck home or to the next committed move, propose a two-stop triangulation (A → B → C → home) only if total empty miles drop, both legs meet the minimum RPM, and HOS holds
+   - Lane is not on `backhaul.lane_blacklist`
+4. **Build triangulation plans where they pay** — When a single backhaul does not get the truck home or to the next committed move, propose a two-stop triangulation (A → B → C → home) only if total empty miles drop, both legs meet the minimum RPM, and HOS holds. Apply the triangulation logic for the fleet's `backhaul.fleet_type`:
+   - **Regional** — home-time and domicile return govern. Prefer triangulations that land the truck at `backhaul.domicile` inside its home-time window even at a slightly lower blended RPM; do not chain a second triangulation that pushes the truck past its reset/home-time anchor
+   - **OTR** — domicile pull is weak; maximize blended RPM and forward progress. Chaining a third leg or a relay is in-bounds as long as each leg clears `backhaul.min_rpm` and HOS holds, even if it keeps the truck out longer
+   - **Dedicated** — the dedicated-lane commitment is protected first. Only fill a backhaul that returns the truck in time for its next dedicated tender; never propose a triangulation that risks the dedicated start, regardless of RPM
 5. **Flag feasibility killers** — Call out anything that would void the plan: driver out of hours, equipment mismatch, reset required before the candidate pickup, weather or port congestion affecting the lane
 6. **Recommend and assign actions** — For the top 5–8 opportunities, produce a one-line action the dispatcher can execute today: post to DAT with specific rate floor, call Broker X about lane Y, pull committed-pool return from Shipper Z, or hold for a better candidate tomorrow
 7. **Summarize the weekly impact** — Roll up estimated empty miles saved, backhaul revenue added, and net margin improvement across the full plan. Break out which trucks gain the most
@@ -132,10 +136,16 @@ Plan total: ~493 empty mi eliminated · ~$1,504 revenue added · 3 actions today
 
 **Internal notes**
 
-- Fuel/cost: $1.42/mi all-in cost from `config.yml`; min backhaul RPM $1.90 all-in; DH tolerance 150 mi/leg.
+- Config-sourced values: $1.42/mi all-in cost (dry-van class) from `backhaul.cost_per_mile`; $1.90 all-in min RPM from `backhaul.min_rpm`; 150 mi/leg from `backhaul.deadhead_tolerance`; CLT domicile + weekend home-time from `backhaul.domicile`; DAT/Truckstop boards, "Eastbound Logistics" GA/TN broker partner, and the "Piedmont Paper" ATL→CLT $2.05/mi committed lane all from `backhaul.sources` / `backhaul.committed_pool`; benchmark source `backhaul.benchmark_source` = DAT RateView; `backhaul.lane_blacklist` empty. **Fleet type `backhaul.fleet_type` = regional** — which is why the plan prioritizes domicile return inside home-time (Suarez and Tovar both anchored to Fri CLT) over squeezing a higher blended RPM out of a longer chain.
 - HOS snapshot timestamp: Fri planning huddle, reflects projected Wed-drop hours — **re-validate Tue PM** against actual ELD before committing Truck 19.
 - Benchmark source: DAT RateView L:T ratios (ATL 4.1 favorable, BNA 1.8 thin) drove the hold-vs-source call on Truck 19.
 - Truck 3's empty run is a deliberate accepted cost — sourcing a sub-150-mi backhaul on a thin board costs more in dwell than the $139 saved.
+
+## Configuration Reference
+
+- `config.yml` — `backhaul.fleet_type` (regional / OTR / dedicated — selects the step-4 triangulation logic), `backhaul.deadhead_tolerance` (max empty miles/leg, scored in step 3), `backhaul.min_rpm` (all-in RPM floor, by equipment class where set), `backhaul.cost_per_mile` (all-in cost by equipment class, drives the step-2 dollars-at-risk ranking), `backhaul.domicile` (home base + home-time policy), `backhaul.sources` (preferred boards + broker partners by drop region), `backhaul.committed_pool` (committed-pool shippers with standing return-lane rates, applied in step 3 where the drop matches a pool lane), `backhaul.lane_blacklist` (regions/lanes excluded in scoring), `backhaul.benchmark_source` (DAT RateView / Greenscreens default for the market-context read). A week's-input value always overrides the matching config default; config-sourced values are listed in the internal-notes block.
+- Knowledge base — `knowledge-base/terminology/` (deadhead, backhaul, triangulation, headhaul, RPM, HOS 11/14/70, domicile, tender)
+- Sibling skills — `skills/operations/route-optimization-brief.md` (HOS-feasibility math shared with the triangulation legs here), `skills/operations/carrier-rate-comparison.md` (rate benchmarking for the candidate backhaul lanes), `skills/sales/spot-vs-contract-rate-negotiation-brief.md` (when a recurring backhaul lane is worth converting to a committed-pool agreement)
 
 ---
 
