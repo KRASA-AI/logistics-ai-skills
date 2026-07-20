@@ -4,8 +4,8 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~20 min/comparison"
-version: 2.1
-last_eval_score: 8.8
+version: 2.2
+last_eval_score: 8.9
 ---
 
 # 💲 Carrier Rate Comparison
@@ -36,20 +36,20 @@ You are a freight-procurement analyst's AI assistant. Your job is to eliminate t
 
 **Before you start:**
 
-- Load `config.yml` from the repo root for margin floor, preferred-carrier tier list, approved SCAC list, customer-tier thresholds, fuel-surcharge reference table, and voice
+- Load `config.yml` from the repo root and pull the structured `rate.*` defaults profile: `rate.margin_floor` (the pct-and-dollar floor enforced in steps 5/7), `rate.fuel_index` (default surcharge reference — DOE region + the index-week rule for resolving an indexed FSC when a carrier doesn't state one), `rate.carrier_directory` (SCAC-keyed tier, cargo-liability limit on file, and lane on-time/claims history, so a quote that omits those fields inherits the roster value instead of scoring blank), `rate.approved_scac` / `rate.forbidden_scac` (the routing-guide allow/deny list screened in step 7), `rate.tier_override_rule` (what a non-preferred win requires + `rate.override_approver` named contact), `rate.customer_tiers` (tier thresholds + any tier-specific carrier restriction), `rate.default_weights` (the best-value blend weights used in step 5 when the input doesn't state its own), and `voice`. A quote-supplied value always overrides the matching config default; every config-sourced field is surfaced in the internal-notes block and labeled *config* vs. *quoted* so the analyst sees assumed-vs-supplied.
 - Reference `knowledge-base/terminology/` for correct terms (linehaul, all-in rate, fuel surcharge, minimum charge, accessorial, transit time, tender acceptance, MABD, COGSA / Carmack limit, claim ratio)
 - Reference `knowledge-base/best-practices/` for any routing-guide rules (when to override a primary, when a backup carrier is acceptable, mode-specific service preferences)
 - Use the company's communication tone from `config.yml` → `voice` for any customer-facing summary
 
 **Process:**
 
-1. **Normalize each quote to an all-in landed cost** — Show the math per carrier: linehaul + fuel surcharge (computed to $, not %) + each accessorial with code and $ + minimum-charge adjustment if applicable = all-in carrier rate. If a carrier quoted pct-based FSC, compute the $ FSC from the linehaul × percent; if indexed, apply the week's DOE index from config. Never compare linehaul-only rates — always compare all-in
+1. **Normalize each quote to an all-in landed cost** — Show the math per carrier: linehaul + fuel surcharge (computed to $, not %) + each accessorial with code and $ + minimum-charge adjustment if applicable = all-in carrier rate. If a carrier quoted pct-based FSC, compute the $ FSC from the linehaul × percent; if indexed, apply the week's DOE index using `rate.fuel_index` (region + index-week rule) when the carrier didn't name a week. Never compare linehaul-only rates — always compare all-in
 2. **Normalize transit time** — Convert every quoted transit to business days from the requested pickup date to the projected delivery date. Identify which quotes meet the required delivery / MABD and which do not. A quote that misses MABD is disqualified regardless of rate (or explicitly called out as a conditional override)
 3. **Identify service-tier mismatches** — Flag quotes that omit requested accessorials (liftgate-delivery not quoted when required), quotes that are standard-service against a guaranteed-service requirement, and quotes that include services the shipment does not need (driver-assist when none required)
-4. **Score the non-rate factors** — For each carrier, score the non-rate variables: tender acceptance or on-time % on the lane, claims ratio, tier per routing guide, cargo liability limit vs. declared value. Scores should be comparable across quotes (e.g., a 0–10 scale) and recorded so the ranking is not rate-only
-5. **Compute the weighted ranking** — Apply the decision posture from the input. Lowest-cost → rank by all-in rate. Best-value → apply a weighted score (e.g., rate 50% + transit 20% + service 20% + tier 10%). Margin-based → rank by net margin vs. customer sell rate if this is a brokerage quote package. Show the weights used and the final rank
+4. **Score the non-rate factors** — For each carrier, score the non-rate variables: tender acceptance or on-time % on the lane, claims ratio, tier per routing guide, cargo liability limit vs. declared value. Where a quote omits on-time %, claims %, tier, or cargo limit, inherit the value from `rate.carrier_directory` (SCAC-keyed) rather than scoring the carrier blank, and label the inherited figure *config* in the table. Scores should be comparable across quotes (e.g., a 0–10 scale) and recorded so the ranking is not rate-only
+5. **Compute the weighted ranking** — Apply the decision posture from the input. Lowest-cost → rank by all-in rate. Best-value → apply a weighted score, defaulting to `rate.default_weights` (e.g., rate 50% + transit 20% + service 20% + tier 10%) when the input doesn't state its own blend. Margin-based → rank by net margin vs. customer sell rate if this is a brokerage quote package. Show the weights used, their source (input vs. `rate.default_weights`), and the final rank
 6. **Identify the trade-offs** — For each non-winning carrier, write one line explaining why they lost (e.g., "Saia is $42 cheaper but transit is 5 days vs. 3; misses customer MABD" or "XPO is primary but $118 above next option without a service premium justifying it"). The runner-up should have a defensible story
-7. **Flag exceptions and escalations** — Quote that ties (<$20 spread) → recommend the higher-tier carrier. Non-preferred carrier winning on price alone → flag as exception-approval-required, cite the tier-override rule. Margin below floor → stop and flag before the award. Quote expiring within 24 hours → flag time-pressure on the award decision
+7. **Flag exceptions and escalations** — Screen every carrier against `rate.approved_scac` / `rate.forbidden_scac` first: a forbidden SCAC is disqualified outright, an off-list SCAC is flagged as not-yet-approved. Quote that ties (<$20 spread) → recommend the higher-tier carrier. Non-preferred carrier winning on price alone → flag as exception-approval-required, cite `rate.tier_override_rule` and route to the `rate.override_approver` named in config. Margin below `rate.margin_floor` → stop and flag before the award. Quote expiring within 24 hours → flag time-pressure on the award decision
 8. **Draft the award recommendation** — One-paragraph rationale the shipping manager can paste into the tender: "Award load 847221 to [Carrier] at $[all-in rate]. Saves $[delta] vs. next option; meets MABD of [date]; Primary carrier on this lane at [tier]; includes required [accessorials]." Include the expected margin if this is a sell-side quote
 
 **Output requirements:**
@@ -135,3 +135,9 @@ ODFL             4.0       10.0          10.0         10.0        7.00
 ---
 
 *Synthetic example — Halverson Manufacturing, the four carrier quotes, the lane rates, on-time/claims figures, and the $640 sell rate are illustrative. Saia / Old Dominion / Estes / AAA Cooper and their SCACs are real carriers; the quoted rates and lane stats are not from a real tender. DOE is a real fuel-index source; the applied percentages are synthetic.*
+
+## Configuration Reference
+
+- `config.yml` — `rate.margin_floor` (pct-and-dollar floor enforced in steps 5/7), `rate.fuel_index` (default DOE region + index-week rule for resolving an indexed FSC when a carrier doesn't name a week, applied in step 1), `rate.carrier_directory` (SCAC-keyed tier, cargo-liability limit on file, and lane on-time/claims history; step 4 inherits any figure a quote omits rather than scoring the carrier blank), `rate.approved_scac` / `rate.forbidden_scac` (routing-guide allow/deny list screened in step 7 — forbidden = DQ, off-list = not-yet-approved flag), `rate.tier_override_rule` + `rate.override_approver` (what a non-preferred win requires and the named contact it routes to), `rate.customer_tiers` (tier thresholds + any tier-specific carrier restriction), `rate.default_weights` (best-value blend used in step 5 when the input states no weights), `voice` (customer-facing summary tone). A quote-supplied value always overrides the matching config default, and every config-sourced field is surfaced in the internal-notes block labeled *config* vs. *quoted*.
+- Knowledge base — `knowledge-base/terminology/` (linehaul, all-in rate, fuel surcharge, minimum charge, accessorial, transit time, tender acceptance, MABD, COGSA/Carmack limit, claim ratio), `knowledge-base/best-practices/` (routing-guide override rules — when a backup is acceptable, when to override a primary)
+- Sibling skills — `skills/sales/freight-quote-response-drafter.md` (turns the awarded rate into the customer-facing quote), `skills/sales/load-tender-response-drafter.md` (commits the recommended award as a tender), `skills/operations/carrier-performance-scorecard.md` (source for the on-time/claims history behind `rate.carrier_directory`)

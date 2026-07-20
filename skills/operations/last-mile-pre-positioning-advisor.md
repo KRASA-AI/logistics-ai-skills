@@ -4,8 +4,8 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~45 min/cycle"
-version: 1.1
-last_eval_score: 8.8
+version: 1.2
+last_eval_score: 8.9
 ---
 
 # 📍 Last-Mile Pre-Positioning Advisor
@@ -37,19 +37,19 @@ You are a last-mile operations planner translating a forecast and a set of exter
 
 **Before you start:**
 
-- Load `config.yml` for default service-level targets, repositioning cost thresholds, weather-severity classes, and lead-time assumptions per move type
+- Load `config.yml` and pull the structured `prepos.*` defaults profile: `prepos.sla_target` (the on-time promise the gap-and-dollar math protects), `prepos.move_budget_threshold` (per-move discretionary ceiling above which step 7 routes a move to regional-manager approval), `prepos.weather_severity_classes` (named class → productivity-haircut band applied in step 2, e.g. TS/hurricane landfall = "Severe" → 25–35%), `prepos.lead_times` (spin-up/lead time per move type — overnight transfer, gig-pool spin-up, rental staging, Saturday-shift authorization — used to set deadlines in step 4), `prepos.productivity_baseline` (normal stops-per-driver-day used in the capacity formula in step 3), `prepos.cost_model` (default cost per move type: transfer linehaul, gig route, rental-van/day, premium-shift premium), `prepos.depot_directory` (per-depot manager owner + home region so the depot-manager sheet and cross-region flag pre-fill), and `voice`. An input-supplied value always overrides the matching config default; every config-sourced assumption is surfaced in the internal-notes block and labeled *config* vs. *supplied* so the regional manager sees assumed-vs-supplied.
 - Reference `knowledge-base/terminology/` for correct terms (stops-per-hour, density, drop count, EDD, promise date, SLA, contractor network, gig tier, micro-fulfillment, dispatch block)
 - Confirm that the forecast has been produced or sanity-checked by the Demand Forecasting Summary Brief — if MAPE on the relevant depots is >30%, flag the plan as working off a low-confidence base
 
 **Process:**
 
 1. **Validate the forecast at depot grain** — Check the per-depot forecast for obvious anomalies (a 4× jump on a small depot with no known driver, a depot missing from the file, negative values). Note depots where the forecast is materially above historical peak and depots where it is below historical floor
-2. **Layer external signals onto the forecast** — For each depot: (a) overlay the weather outlook and flag days where precipitation or wind will degrade stops-per-hour (apply a productivity haircut — e.g., 15–35% — scaled to severity), (b) overlay local events and flag days where either demand spikes (event attendee deliveries, marketplace pre-game orders) or street access degrades (closures, parade routes), (c) flag where a named-storm landfall compresses a service window into fewer available hours
-3. **Compute the gap by depot by day** — For each depot × day, compute expected demand (stops or route-hours) minus effective capacity (drivers × productivity × hours available × vehicle count). Report the gap in stops, route-hours, and dollars at risk (failed-delivery cost + SLA-miss penalty)
-4. **Rank the top pre-positioning moves** — Produce the 5–10 moves that close the largest portion of the gap per dollar of cost, each described as a single line: "Transfer 1,200 parcels from Depot A to Depot B by Tue 6am," "Pre-stage 4 EV step-vans at Depot C from Depot D by Mon 10pm," "Shift 6 contractor routes from Depot E to Depot F for Wed–Fri," "Open Saturday shift at Depot G." Show the expected stops covered and the cost per move
+2. **Layer external signals onto the forecast** — For each depot: (a) overlay the weather outlook and flag days where precipitation or wind will degrade stops-per-hour (apply the productivity haircut band from `prepos.weather_severity_classes` for the matched severity class — e.g., "Severe" landfall → 25–35% — rather than an ad-hoc figure), (b) overlay local events and flag days where either demand spikes (event attendee deliveries, marketplace pre-game orders) or street access degrades (closures, parade routes), (c) flag where a named-storm landfall compresses a service window into fewer available hours
+3. **Compute the gap by depot by day** — For each depot × day, compute expected demand (stops or route-hours) minus effective capacity (drivers × productivity × hours available × vehicle count), using `prepos.productivity_baseline` for normal stops-per-driver-day when a depot doesn't supply its own. Report the gap in stops, route-hours, and dollars at risk (failed-delivery cost + the `prepos.sla_target` miss penalty)
+4. **Rank the top pre-positioning moves** — Produce the 5–10 moves that close the largest portion of the gap per dollar of cost, each described as a single line: "Transfer 1,200 parcels from Depot A to Depot B by Tue 6am," "Pre-stage 4 EV step-vans at Depot C from Depot D by Mon 10pm," "Shift 6 contractor routes from Depot E to Depot F for Wed–Fri," "Open Saturday shift at Depot G." Cost each move from `prepos.cost_model` (transfer linehaul, gig route, rental-van/day, premium-shift premium) unless the input prices it, and set each move's deadline by working back from the `prepos.lead_times` spin-up window for that move type. Show the expected stops covered and the cost per move
 5. **Build the combined plan** — Select the moves that together close the gap without blowing the budget; show residual risk where the plan is deliberately not closing a gap (accepting SLA miss on a low-margin lane, for example). Include a contingency move for each major risk: if the storm shifts east, what changes
-6. **Draft the depot-manager sheet and the driver-facing note** — The depot-manager sheet is a one-pager with the moves, owners, deadlines, and the residual risk. The driver-facing note is 3–6 short lines in plain language telling drivers what's different — routes being rebalanced, a new start time, a weather advisory, a staged vehicle — without jargon
-7. **Flag the decisions that need regional-manager approval** — Any move that exceeds the per-move budget threshold in `config.yml`, any move that pulls from a neighboring region's pool, any move that opens a premium-pay shift, or any move that accepts a visible SLA miss
+6. **Draft the depot-manager sheet and the driver-facing note** — The depot-manager sheet is a one-pager with the moves, owners, deadlines, and the residual risk; address it to the depot's manager and home region from `prepos.depot_directory` when the input doesn't name them. The driver-facing note is 3–6 short lines in plain language telling drivers what's different — routes being rebalanced, a new start time, a weather advisory, a staged vehicle — without jargon
+7. **Flag the decisions that need regional-manager approval** — Any move that exceeds `prepos.move_budget_threshold`, any move that pulls from a neighboring region's pool (detected via the home region in `prepos.depot_directory`), any move that opens a premium-pay shift, or any move that accepts a visible SLA miss
 
 **Output requirements:**
 
@@ -149,3 +149,9 @@ CHS-4  Wed (recov) deferred volume rolls to Thu/Fri — see note
 ---
 
 *Synthetic example — the four Carolinas depots (CHS-4 / RDU-1 / CLT-2 / GSO-3), the stop forecasts, driver/van counts, the D. Tovar / J. Park / K. Mahoney / M. Reyes owners, and "Tropical Storm Bonnie" are illustrative. NHC and the convention are real signal types; this specific storm, track, and event are fictional. Productivity-haircut percentages and dollar-at-risk figures are synthetic planning assumptions, not measured values.*
+
+## Configuration Reference
+
+- `config.yml` — `prepos.sla_target` (on-time promise the gap/dollar math protects, step 3), `prepos.move_budget_threshold` (per-move discretionary ceiling above which step 7 routes to regional-manager approval), `prepos.weather_severity_classes` (named class → productivity-haircut band applied in step 2), `prepos.lead_times` (spin-up window per move type — overnight transfer, gig-pool, rental staging, Saturday-shift — sets deadlines in step 4), `prepos.productivity_baseline` (normal stops-per-driver-day in the step-3 capacity formula), `prepos.cost_model` (default cost per move type used to price the step-4 move list), `prepos.depot_directory` (per-depot manager owner + home region, pre-filling the step-6 sheet and the step-7 cross-region flag), `voice` (driver-note tone). An input-supplied value always overrides the matching config default, and every config-sourced assumption is surfaced in the internal-notes block labeled *config* vs. *supplied*.
+- Knowledge base — `knowledge-base/terminology/` (stops-per-hour, density, drop count, EDD, promise date, SLA, contractor network, gig tier, micro-fulfillment, dispatch block), `knowledge-base/best-practices/` (weather-contingency and surge-labor playbooks supplementing `prepos.weather_severity_classes`)
+- Sibling skills — `skills/operations/demand-forecasting-summary-brief.md` (produces / sanity-checks the per-depot forecast this brief consumes, incl. the MAPE confidence cross-check), `skills/operations/route-optimization-brief.md` (sequences the routes once capacity is staged), `skills/operations/geopolitical-disruption-shipper-brief.md` (upstream network-disruption signal feeding the external-signal overlay)

@@ -4,8 +4,8 @@ category: _shared
 tools: [claude, chatgpt]
 difficulty: beginner
 time_saved: "~10 min/use"
-version: 2.2
-last_eval_score: 8.8
+version: 2.3
+last_eval_score: 8.9
 ---
 
 # 📝 Meeting Summarizer
@@ -28,15 +28,23 @@ Provide the following:
 4. **Audience for the summary** — Participants only, broader ops team, customer-facing, or executive (the shape of the output changes)
 5. **Prior-meeting reference (optional)** — Link or notes from the last meeting of the same type so rollover items can be surfaced
 
+Only item 1 is a hard requirement. Meeting type, attendees, and audience are defaulted from the `meeting.*` config profile when the notes do not make them obvious — see below — and the assumption is stated at the top of the summary rather than asked for.
+
+## Configuration Reference
+
+- `config.yml` — `meeting.team_roles` (name → role → function, used to attribute an ambiguous commitment to a person instead of leaving it "Owner: TBD", and to resolve bare first names or initials in raw notes into attributed owners), `meeting.escalation_matrix` (issue type → escalation owner, routing each Open Issue and Tension to the person who breaks the tie rather than leaving it unowned), `meeting.compliance_flags` (the categories — safety, hazmat, customs, HOS — and the dollar thresholds, e.g. `claims_threshold`, `detention_threshold`, `invoice_variance_threshold`, that decide what gets pulled into the Compliance / Safety / Financial Flags section; an item crosses into that section because it trips a configured threshold, never by feel), `meeting.default_audience` (audience shape assumed when the request names none, driving the step-6 output shape), `meeting.default_types` (the recurring meeting cadence — which type this is if the notes do not say, e.g. a Monday 07:00 entry defaults to the dispatch huddle), `meeting.deadline_convention` (how a vague "by next week" is resolved into a specific date — e.g. next-occurring business day of the stated week, or the next meeting of the same cadence), `meeting.owner_defaults` (default owner per action-item category — claims, invoice, carrier-performance, customer-comms — filling the owner column when the notes name nobody, in place of a bare TBD), `voice` (tone, adjusted per audience). An input-supplied value always overrides the matching config default, and every config-sourced attribution, threshold, or deadline is surfaced in the summary labeled *config* vs. *stated in the meeting* — an owner assigned from config is always marked as an assignment, never reported as though the person accepted it in the room.
+- Knowledge base — `knowledge-base/terminology/` (correct logistics terminology across dispatch, claims, customs, and S&OP vocabularies)
+- Sibling skills — `skills/operations/shipment-exception-handler.md` (owns the corrective action for exceptions raised in the meeting), `skills/operations/carrier-performance-scorecard.md` (consumes carrier-review metrics captured here), `skills/_shared/email-drafter.md` (renders the customer-facing audience shape into a sendable note)
+
 ## Instructions
 
 You are a logistics operations professional's AI assistant. Your job is to transform meeting notes into structured, actionable summaries that the ops team can reference and act on immediately — and that a manager can audit later without replaying the meeting.
 
 **Before you start:**
 
-- Load `config.yml` from the repo root for company name, team roles, `voice`, `escalation_matrix`, and `compliance_flags` (safety, hazmat, customs, HOS, claims over a dollar threshold)
+- Load the `meeting.*` config-defaults profile named in the Configuration Reference. Meeting type, audience, owners, deadlines, and flag thresholds are resolved from that profile wherever the notes leave them open — and every such resolution is labeled *config* in the output
 - Reference `knowledge-base/terminology/` to ensure correct logistics terminology
-- Use the company's communication tone from `config.yml` → `voice`, adjusted for the selected audience
+- Use the company's communication tone from `config.yml` → `voice`, adjusted for the selected audience (or `meeting.default_audience` if none was named)
 
 **Process:**
 
@@ -56,7 +64,7 @@ You are a logistics operations professional's AI assistant. Your job is to trans
    - **DISCUSSED** — Surfaced but parked; no action this cycle
    - Never report a proposal as a decision — if the notes are ambiguous, label it PROPOSED and surface it in the open-issues section
 
-3. **Attribute speakers where the notes support it** — If the raw notes include names or role tags, attribute decisions and commitments to the person who made them. Where attribution is ambiguous, use role (e.g., "dispatch lead") and flag the attribution as inferred. Never invent an attribution.
+3. **Attribute speakers where the notes support it** — If the raw notes include names or role tags, attribute decisions and commitments to the person who made them, resolving bare first names, initials, or role shorthand against `meeting.team_roles`. Where attribution is ambiguous, use role (e.g., "dispatch lead") and flag the attribution as inferred. Never invent an attribution — resolving "K." to the procurement lead named in `meeting.team_roles` is a lookup; deciding that the procurement lead must have been the one who committed is an invention.
 
 4. **Extract and organize into these sections:**
    - **TL;DR (1–2 lines)** — The one outcome a leader needs. For executive audience, place at the very top.
@@ -72,12 +80,12 @@ You are a logistics operations professional's AI assistant. Your job is to trans
    - **Next Meeting** — Date / time if scheduled, with any prep required
 
 5. **Apply logistics context:**
-   - Convert vague notes into specific action items ("talk to XPO" becomes "Action: [Owner] call XPO rep RE: late pickup on PRO #12345 — by EOD Tuesday")
-   - Flag any compliance or safety items as high priority and route them into the Compliance / Safety / Financial Flags section
-   - Note any financial impacts mentioned (claims values, rate changes, volume commitments, detention exposure) with dollar amounts where stated
-   - Cross-reference team roles from `config.yml` to assign ownership where notes are ambiguous; if still unclear, flag as "Owner: TBD — suggested: [role]"
+   - Convert vague notes into specific action items ("talk to XPO" becomes "Action: [Owner] call XPO rep RE: late pickup on PRO #12345 — by EOD Tuesday"). Resolve vague deadlines ("next week," "before the next one") into specific dates via `meeting.deadline_convention`, and mark the resolved date *config* so the owner can correct it
+   - Route any item that trips a `meeting.compliance_flags` category or crosses one of its dollar thresholds into the Compliance / Safety / Financial Flags section, naming the threshold it tripped. An item enters that section because it crossed a configured line, not because it felt important
+   - Note any financial impacts mentioned (claims values, rate changes, volume commitments, detention exposure) with dollar amounts where stated, and test each against the matching `meeting.compliance_flags` threshold
+   - Assign ownership from `meeting.team_roles` and `meeting.owner_defaults` where the notes are ambiguous, marking the assignment *config* rather than reporting it as accepted in the room; route each Open Issue and Tension to its tie-breaker via `meeting.escalation_matrix`. Only if no config default covers the category, flag as "Owner: TBD — suggested: [role]"
 
-6. **Shape the output for the selected audience:**
+6. **Shape the output for the selected audience** (the stated audience, else `meeting.default_audience`)**:**
    - **Participants-only** — Full detail, all sections, internal jargon fine
    - **Broader ops team** — Full detail but lead with TL;DR + Action Items; trim non-operational discussion
    - **Customer-facing** — Summary + decisions relevant to the customer + agreed next steps; strip internal tensions and financial detail
@@ -86,10 +94,11 @@ You are a logistics operations professional's AI assistant. Your job is to trans
 **Output requirements:**
 
 - Clean, scannable summary format with clear section headers
-- Every DECIDED item has an attributed owner; every action item has an owner and a specific date (or an explicit "Owner: TBD — suggested: [role]")
+- Every DECIDED item has an attributed owner; every action item has an owner and a specific date (or an explicit "Owner: TBD — suggested: [role]" where no config default covers the category)
 - Decision-confidence tags (DECIDED / PROPOSED / DISCUSSED) applied consistently
 - Reference numbers preserved exactly as stated
-- Compliance / safety / financial flags surfaced in their own section so they aren't buried
+- Compliance / safety / financial flags surfaced in their own section so they aren't buried, each naming the `meeting.compliance_flags` threshold it tripped
+- Any owner, deadline, or audience shape resolved from config rather than stated in the meeting is labeled *config* — never presented as a commitment someone made in the room
 - Tensions / open disagreements preserved, not smoothed over
 - Professional formatting appropriate for sharing via email or Slack
 - Saved to `outputs/` if the user confirms
@@ -143,7 +152,7 @@ Monthly carrier review with Sapphire Freight Lines (T. Nguyen, VP Ops). Performa
 3. **K. Mahoney** — Open the fuel-surcharge re-baseline conversation with Sapphire procurement counterpart by 2026-06-08. Frame as MSA addendum, not a renegotiation.
 4. **L. Suarez** — Customer-facing note to Halverson account team summarizing the two May delay complaints + the joint inspection on PRO 992-44017, by EOD 2026-06-02.
 5. **K. Mahoney** — Kick off MSA renewal cycle by 2026-06-30 (90 days before 2026-09-30 expiry); pull the carrier-performance scorecard cycle from 2026-06-05 into the renewal prep packet.
-6. **Owner: TBD — suggested: K. Mahoney** — Draft a 30-day OTP/OTD recovery commitment template that we use with all carriers below contract minimums; this is the second carrier this quarter in the same situation.
+6. **Owner: K. Mahoney** *(config — `meeting.owner_defaults.carrier_performance`; assigned, not accepted in the room)* — Draft a 30-day OTP/OTD recovery commitment template that we use with all carriers below contract minimums; this is the second carrier this quarter in the same situation. Deadline **2026-06-19** *(config — `meeting.deadline_convention`: next same-cadence checkpoint, since the room set no date)*.
 
 **Shipment / Load-Specific Notes**
 
@@ -171,8 +180,19 @@ Monthly carrier review with Sapphire Freight Lines (T. Nguyen, VP Ops). Performa
 
 **Compliance / Safety / Financial Flags**
 
-- **Financial flag (claims_threshold)** — PRO 992-44017 at $67K crosses the $50K Tier-1 carrier-review threshold. Triggers Q3 carrier-performance-scorecard review path with M. Reyes and K. Mahoney as named co-owners. P. Akande to be looped in if the Thursday inspection lands as Sapphire-liable.
-- **Financial flag (invoice accuracy)** — $1,840 in duplicate-detention charges routed to P. Akande.
+- **Financial flag (`claims_threshold`)** — PRO 992-44017 at $67K crosses the $50K Tier-1 carrier-review threshold *(config — `meeting.compliance_flags.claims_threshold`)*. Triggers Q3 carrier-performance-scorecard review path with M. Reyes and K. Mahoney as named co-owners. P. Akande to be looped in if the Thursday inspection lands as Sapphire-liable.
+- **Financial flag (`invoice_variance_threshold`)** — $1,840 in duplicate-detention charges crosses the $1,000 invoice-variance line *(config)*; routed to P. Akande (CFO) per `meeting.escalation_matrix.invoice`.
+
+**Config-sourced resolutions in this summary**
+
+| Field | Value used | Source |
+|---|---|---|
+| Audience shape | Broader ops team | *stated* in the request |
+| Claims flag threshold | $50K | *config* — `meeting.compliance_flags.claims_threshold` |
+| Invoice-variance threshold | $1,000 | *config* — `meeting.compliance_flags.invoice_variance_threshold` |
+| Invoice escalation owner | P. Akande (CFO) | *config* — `meeting.escalation_matrix.invoice` (the room said "route to P. Akande," which agrees with config) |
+| Action item 6 owner + deadline | K. Mahoney / 2026-06-19 | *config* — `meeting.owner_defaults.carrier_performance` + `meeting.deadline_convention`; **assigned, not accepted in the room** |
+| All other owners / dates | K. Mahoney, J. Park, L. Suarez, M. Reyes | *stated* in the meeting |
 
 **Rollover from Prior Meeting (2026-05-04)**
 
