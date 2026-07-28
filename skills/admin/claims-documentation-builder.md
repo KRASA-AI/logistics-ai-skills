@@ -4,8 +4,8 @@ category: admin
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~30 min/claim"
-version: 2.3
-last_eval_score: 8.8
+version: 2.4
+last_eval_score: 8.9
 ---
 
 # 📋 Claims Documentation Builder
@@ -20,9 +20,19 @@ Use this skill when freight arrives damaged, short, or lost, or when a delay tri
 
 This skill produces a claims package for filing; it does not determine liability. Final filing should be reviewed by the claims manager or cargo-insurance adjuster.
 
+## Input Modes
+
+The claims process has two natural moments — the intake right after a POD exception, and the final filing once invoices are in hand — and the skill should be useful at both without demanding the full evidence package at the first one. The carrier claims-desk directory, standing-party posture, released-value caps, salvage partners, and signature block all live in config, so an intake package should never be stalled for them. Pick the mode that matches where the claim is; each higher mode is a superset.
+
+- **Mode A — Intake package (minimum viable).** The irreducible set is **the shipment identifiers** (at minimum PRO or BOL, carrier + SCAC, pickup and delivery dates), **the exception facts** (loss type + POD/BOL exception wording + date damage was noted), and **a claim-amount basis** (even a preliminary invoice value or repair estimate). From this the skill classifies the claim, validates the filing window, computes a preliminary claim amount, drafts the Carmack cover letter, and — critically — produces the two-list gap analysis so the handler knows exactly what evidence to collect before final filing. Standing, carrier directory, released-value posture, and signature block resolve from `claims.*` config. Use this the moment a POD exception is noted.
+- **Mode B — Standard filing.** Mode A plus the evidence on hand (photos, inspection report, repair/replacement invoices, salvage offer, commercial invoice) so the evidence index is populated with real exhibits and the claim-amount math cites source documents.
+- **Mode C — Full filing.** Mode B plus the complete filing route and deadlines when they differ from config (a carrier not in `claims.carrier_directory`, a non-standard window such as COGSA or Montreal), subrogation/assignment documentation when filing as subrogee, and temperature/sensor data for reefer or high-value claims.
+
+**Ask-only-if-blocking rule.** Only a claim with **no shipment identifier that can be matched to the carrier's record** (neither PRO nor BOL), **no exception fact** (no stated loss type or POD wording), or **no claim-amount basis at all** is blocking — stop and ask only for those. Never hold a Mode-A intake for evidence that has not been collected yet (photos, inspection report, final invoices) or for a field that has a config default (carrier claims-desk channel, standing posture, released-value cap, salvage buyer, signature block): draft the package, route the missing evidence into the **Would strengthen** or **Blocking** gap list per the step-6 rules, and echo each config-sourced field for `confirm-still-applies`. The one hard stop inside a draftable claim is **timeliness** — if the filing window cannot be evidenced from what is on hand, that is a blocking gap and the package must recommend evidence collection before filing.
+
 ## Required Input
 
-Provide the following:
+The full input reference (Mode C draws on all of it; Modes A and B use the subset named above). Provide the following:
 
 1. **Shipment identifiers** — PRO number, BOL number, carrier name, SCAC, pickup date, delivery date (or attempted-delivery date), origin and destination, commodity description, declared value, freight class, and the consignor's claim number if already assigned
 2. **Exception facts** — Type of loss (visible damage, concealed damage, shortage, complete loss, delay), POD notation exactly as written by the driver, date and time damage was first noted, first point-of-origin for the damage if known (carrier terminal, lumper, weather event)
@@ -42,6 +52,7 @@ You are a logistics claims specialist's AI assistant. Your job is to package the
 
 **Process:**
 
+0. **Select the input mode and resolve config before asking for anything** — Match the request to Mode A / B / C above. Confirm at least one matchable identifier, one exception fact, and a claim-amount basis are present; then resolve standing, carrier directory, released-value posture, salvage partners, and signature block from `claims.*`. Apply the ask-only-if-blocking rule: stop only for a claim with no matchable identifier, no exception fact, or no amount basis — and treat an unevidenceable filing window as a blocking gap inside the drafted package rather than a reason not to start. Uncollected evidence flows into the step-6 gap lists, not into a stall.
 1. **Classify the claim** — Label as one of: visible damage, concealed damage, shortage, loss (non-delivery), delay/market-loss, temperature excursion. Concealed-damage filings must show the 15-day notification was met and must explain why the damage was not visible at delivery
 2. **Validate the filing window** — Compute days elapsed from delivery (or attempted-delivery) to today against the applicable window. Flag immediately if the claim is close to or past the deadline. If a released-value limitation applies (commodity class, NMFC note, carrier tariff), note the per-pound or per-article cap on recovery. Check the commodity against `claims.released_value_defaults` first: if the company has a confirmed released-value posture on file for this commodity/NMFC/carrier-tariff, apply it and label it `released-value cap — config (confirm still applies)`; if not, derive the cap from the tendered documents and label it `released-value cap — derived from tender`
 3. **Compute the claim amount** — Lay out the math explicitly: invoice value + inbound freight portion attributable to damaged goods + mitigation/inspection costs − salvage credit − any pre-agreed deductible = claim amount. Show each line with source evidence (invoice #, repair quote #, etc.). The deductible line defaults to `claims.deductible` and the rounding rule to `claims.rounding_rule` (default bank-round to the cent) when those are set in config; a claim-input deductible overrides the config value and the override is noted
@@ -65,7 +76,7 @@ You are a logistics claims specialist's AI assistant. Your job is to package the
 
 ## Example Output
 
-Reference output (illustrative — concealed-damage motor carrier claim, dry van, palletized goods).
+Reference output (illustrative — **Mode B** Standard filing: concealed-damage motor carrier claim, dry van, palletized goods, evidence in hand. A Mode-A intake of the same claim — filed the day the exception was noted, before inspection and salvage — would produce the same header, filing-window validation, cover letter, and gap analysis, with the inspection report and salvage worksheet appearing as **Would strengthen** items until collected).
 
 **Claim header**
 

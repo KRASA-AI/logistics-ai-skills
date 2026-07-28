@@ -4,8 +4,8 @@ category: admin
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~15 min/BOL"
-version: 2.2
-last_eval_score: 8.8
+version: 2.3
+last_eval_score: 8.9
 ---
 
 # 📄 BOL Generator
@@ -20,9 +20,19 @@ Use this skill any time a BOL needs to be generated or reconstructed: originatin
 
 This skill produces a signature-ready document, but the shipper-of-record signature and the driver's signature-upon-pickup remain human actions. If the NMFC code or freight class is not obviously correct from the commodity description, the output flags this rather than guessing.
 
+## Input Modes
+
+Not every BOL needs all eight input blocks below, and the most common request — a routine non-hazmat LTL move on a lane the company already runs — should never be stalled for fields the config already carries or the carrier assigns at pickup. Pick the mode that matches the request; each higher mode is a superset of the one before it.
+
+- **Mode A — Quick BOL (minimum viable).** The irreducible set is: **shipper** (or the config shipper-of-record default), **consignee** (name + address), and **at least one freight line carrying handling-unit count, weight, and a plain-English commodity description**, plus **freight terms** (or the `bol.default_freight_terms` default). From this the skill produces a signature-ready draft: BOL # generated from `bol.numbering_scheme`, carrier pre-filled from `bol.default_carriers_by_lane` if a lane is named, class proposed from density + the saved NMFC map, and every assumed field echoed in the gap list. Use this for a straightforward one- or two-line dry-van LTL move.
+- **Mode B — Standard BOL.** Mode A plus the shipment header details (PO / customer ref, service level, explicit carrier + SCAC, ready time), per-line NMFC # / freight class where the shipper knows them, declared value, and any special instructions / accessorials not already standing in config.
+- **Mode C — Full BOL.** Mode B plus the hazmat block (any regulated material), a third-party payor block (bill-to ≠ shipper/consignee), and multi-line class-break freight with per-line dimensions for density confirmation.
+
+**Ask-only-if-blocking rule.** Only a missing **shipper** with no config default, a missing **consignee**, or the absence of **any freight line with weight + commodity** is blocking — stop and ask only for those. Never hold a Mode-A draft for a field that has a config default (BOL #, carrier/SCAC by lane, freight terms, signatory, standing accessorials, declared-value posture) or for a field the carrier supplies downstream (Pro #). Pull the default, render the draft, and surface each assumed field in the gap list as "confirm still applies." Hazmat is the one exception: if the freight is regulated and no hazmat block or trained signatory is supplied, the BOL is flagged not-releasable rather than drafted around.
+
 ## Required Input
 
-Provide the following:
+The full input reference (Mode C draws on all of it; Modes A and B use the subset named above). Provide the following:
 
 1. **Shipment header** — Pickup date, ready time, BOL number (if assigned) or the numbering scheme to use, PO # or customer reference, carrier name + SCAC, carrier Pro # (if tendered), service level (standard LTL, guaranteed, volume, TL)
 2. **Shipper block** — Legal name, address, city/state/ZIP, contact name, phone, dock hours, shipper-of-record flag (yes/no)
@@ -55,6 +65,7 @@ You are a freight-documentation specialist's AI assistant. Your job is to produc
 
 **Process:**
 
+0. **Select the input mode and resolve defaults before asking for anything** — Match the request to Mode A / B / C above. Fill every unsupplied field that has a config default from the BOL-defaults profile, and treat carrier-assigned fields (Pro #) as blank-by-design. Apply the ask-only-if-blocking rule: stop only for a missing shipper-with-no-default, a missing consignee, or the lack of any freight line with weight + commodity. Everything else proceeds to a draft with the assumption surfaced in the gap list.
 1. **Validate the commodity and classify** — For each freight line, compute density (lb/ft³) from the dimensions and weight. Cross-check the stated freight class against the density band; flag mismatches. Before guessing, check the commodity against the company's saved NMFC map in `config.yml` (`bol.nmfc_subscription.saved_map`) — for recurring SKUs the company ships, this yields a class the company has already confirmed, which can be marked *confirmed-from-company-history* rather than *proposed*. If an NMFC # is missing and the commodity is not in the saved map, propose the most likely match from the commodity description and note it as proposed, not confirmed. Never output a class without either an NMFC reference or a "CLASS TBD — confirm with carrier" flag
 2. **Sanity-check weights and counts** — Confirm total piece count, total handling-unit count, and total weight add up across lines. Flag weight totals that look round-number-suspicious for the commodity (often a re-weigh trigger)
 3. **Resolve hazmat** — If any line is hazmat, build the shipper's-declaration block exactly once per UN#: "UN#### , Proper Shipping Name, Class X, Packing Group Y, Quantity". Include the 24/7 emergency response number and the shipper's-certification statement. Confirm that a hazmat-trained signatory name is available; if not, flag the BOL as not-releasable until provided
@@ -82,7 +93,7 @@ You are a freight-documentation specialist's AI assistant. Your job is to produc
 
 ## Example Output
 
-Reference output (illustrative — 2-class LTL move, dry van, no hazmat, liftgate delivery required).
+Reference output (illustrative — **Mode B** Standard BOL: 2-class LTL move, dry van, no hazmat, liftgate delivery required. A Mode-A request supplying only shipper reference, consignee, and the two freight lines would render the same document, with the carrier/SCAC, BOL #, freight terms, and the Columbus liftgate accessorial all resolved from config and echoed in the gap list).
 
 **Header block**
 

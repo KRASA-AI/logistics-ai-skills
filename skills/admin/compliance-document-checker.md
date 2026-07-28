@@ -4,8 +4,8 @@ category: admin
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~25 min/review"
-version: 2.2
-last_eval_score: 8.8
+version: 2.3
+last_eval_score: 8.9
 ---
 
 # ✅ Compliance Document Checker
@@ -20,9 +20,19 @@ Use this skill before an audit, before releasing a hazmat shipment at the dock, 
 
 This skill produces a pre-filing review to catch the obvious misses. It does not replace a licensed customs broker, DOT compliance officer, or hazmat shipper-of-record certification. Flagged items must be corrected by the qualified person of record.
 
+## Input Modes
+
+A pre-filing review should start the moment the document type and its fields are on the table — the operation context and known-risk history mostly live in config or in the company's standing posture, and a review should not be stalled waiting for them. Pick the mode that matches what the submitter has in hand; each higher mode adds precision, not permission to start.
+
+- **Mode A — Quick review (minimum viable).** The irreducible set is **the review type** (HOS/ELD log, hazmat BOL, or customs entry) and **the document fields to score against that type's checklist**. From this the skill runs the full matching checklist, applies the company's `compliance.operation_profile` (HOS cycle, short-haul eligibility), `compliance.tolerances` (Flag→Fail boundaries, probation list), and any `compliance.customer_overrides` that key to the customer named on the document — then produces the Pass/Flag/Fail log. Use this for the everyday "second set of eyes before this leaves the building."
+- **Mode B — Standard review.** Mode A plus the operation context supplied explicitly rather than from config (DOT/MC, hazmat registration, broker of record, IOR EIN, trade lane) when the document is for an entity whose identifiers are not the config defaults, and any customer-specific override not already in config.
+- **Mode C — Full review.** Mode B plus the known-risk flags (prior violations, recent DataQ challenges, ADD/CVD-scoped commodities, probation-list carriers, items the submitter already knows are borderline) and multi-document / cross-document pattern review across a driver fleet or an entry batch.
+
+**Ask-only-if-blocking rule.** Only a missing **review type** or the **absence of any document fields to check** is blocking — stop and ask only for those. Never hold a Mode-A review for operation-context identifiers that have a config default (DOT/MC, hazmat registration, broker of record, IOR EIN, HOS cycle, in-scope PGAs) or for known-risk history the submitter has not volunteered — pull the config posture, run the checklist, and note any config-sourced identifier in the header as matched-from-config. Absent risk history is itself a finding surface, not a reason to wait: score what the document shows and flag out-of-`compliance.commodity_profile` lines for extra scrutiny.
+
 ## Required Input
 
-Provide the following:
+The full input reference (Mode C draws on all of it; Modes A and B use the subset named above). Provide the following:
 
 1. **Review type** — One of: (a) driver HOS / ELD log, (b) hazmat shipping paper / BOL with hazmat declaration, (c) customs entry package. The skill uses the matching checklist for the selected type. For multi-document reviews, specify which types are included
 2. **Documents to review** — Paste or describe the fields present on each document. For ELD: driver, date range, on-duty/drive/sleeper berth/off-duty counts, 30-min break placements, 11/14/70 remaining, any edits and annotations. For hazmat BOL: shipper name + address, UN number, proper shipping name, hazard class, packing group, quantity and unit, emergency response info, 24-hour emergency telephone number, shipper certification. For customs entry: importer of record, consignee, commercial invoice, packing list, HTSUS codes, country of origin marking, duty/tax estimate, certificates (FDA/USDA/FCC/FSIS as applicable), ACE transmission ready flag
@@ -47,6 +57,7 @@ You are a transportation compliance analyst's AI assistant. Your job is to apply
 
 **Process:**
 
+0. **Select the input mode and resolve config before asking for anything** — Match the request to Mode A / B / C above. Confirm the review type and that document fields are present; then fill every operation-context and tolerance value that has a config default. Apply the ask-only-if-blocking rule: stop only for a missing review type or the absence of any fields to score. Missing operation context or risk history proceeds from config posture, with config-sourced identifiers noted in the header.
 1. **Select the checklist** — Based on the review type, apply the matching checklist below. Before scoring, layer in the company's config so the checklist matches the actual operation: apply the HOS cycle and short-haul exception from `compliance.operation_profile` (use 60/7 and the §395.1(e) exemption where configured, not the 70/8 default); append the `compliance.customer_overrides` rows that match the customer named on the document (e.g., a mandatory COO certificate or lumper receipt); and pre-load the `compliance.commodity_profile` watch items (ADD/CVD-scoped commodities, hazmat classes the company does/does not normally move) so an out-of-profile line gets extra scrutiny. The standard checklist by type:
    - **HOS / ELD log**: (a) every day has at least one log entry, (b) 11-hour driving limit not exceeded after a 10-hour off-duty, (c) 14-hour on-duty window not exceeded, (d) 30-minute break taken within 8 driving hours, (e) 70-hour / 8-day cycle not exceeded (or 60/7 if applicable), (f) personal conveyance and yard-move use is within policy, (g) all edits carry the required annotation and e-signature, (h) unidentified driving has been assigned, (i) DVIR completed at start and end of shift
    - **Hazmat BOL**: (a) proper shipping name matches UN number, (b) hazard class and subsidiary hazard class present, (c) packing group present and correct for the substance, (d) quantity per package and total quantity, (e) "RQ" flag if reportable quantity exceeded, (f) 24-hour emergency response telephone number that will answer, (g) emergency response information (guidebook reference or attached sheet), (h) shipper certification signed and dated, (i) segregation compatibility if multiple hazmats on the same BOL, (j) placards specified for the mode
@@ -69,7 +80,7 @@ You are a transportation compliance analyst's AI assistant. Your job is to apply
 
 ## Example Output
 
-Reference output (illustrative — HOS/ELD log review, 7-day cycle, single driver, post-trip pre-filing review ahead of DOT roadside safety audit).
+Reference output (illustrative — **Mode A** Quick review: HOS/ELD log, 7-day cycle, single driver, post-trip pre-filing review ahead of DOT roadside safety audit. Only the review type and the log fields were supplied; the 70/8 cycle, the Flag→Fail tolerances, and the reviewer header were all resolved from config without a clarifying round).
 
 **Review header**
 
