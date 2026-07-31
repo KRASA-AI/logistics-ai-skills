@@ -4,8 +4,8 @@ category: sales
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~6–10 hr/RFP"
-version: 1.2
-last_eval_score: 8.8
+version: 1.3
+last_eval_score: 9.0
 ---
 
 # 📑 3PL Multi-Section RFP Response Drafter
@@ -23,6 +23,14 @@ This skill is for **multi-section** RFP responses with reusable content. For a *
 ## Required Input
 
 **Minimum viable input (fast path).** Do not stall the first draft waiting for the full input set below. The skill is designed to one-shot a working first draft from just three things: (1) the RFP package itself, (2) the issuing shipper's name, and (3) the submission deadline + channel. Everything else has a default source — `config.yml` for company entity, voice, library pointer, freshness windows, margin bands, and the SME tree; the RFP-content library for the reusable blocks; and the buyer's own RFP text for most buyer-context fields. When a field below is not supplied, **draft from the config/library default and record the assumption in the Assumption Register** (see Instructions) rather than pausing to ask. Hold genuine blockers — the cost basis for the pricing rows, named-reference permission status, and any legal-term position — for a single consolidated clarification block at the end, not as serial questions that stop the draft. The fuller the input, the fewer assumptions; but a usable section-mapped first draft should never be gated on inputs the deal desk can confirm during the SME pass.
+
+**Input modes.** The fast path above is Mode A; the full set below tiers into three supersets so the deal desk supplies only as much as the RFP's stage warrants:
+
+- **Mode A — First-pass section map + draft (minimum viable).** (1) the RFP package, (2) the issuing shipper's name, (3) the submission deadline + channel. From these the skill decomposes the RFP into a Section Map, pulls and customizes library blocks against the buyer's own RFP text, drafts net-new sections, and produces the workflow tracker and Assumption Register — a section-mapped working draft, with every defaulted field logged rather than asked. Company entity, voice, library pointer, freshness windows, margin bands, and the SME tree resolve from `config.yml`.
+- **Mode B — Buyer-calibrated draft.** Mode A plus buyer context (block 2) and company position (block 3) — what the shipper is buying, the volume/commodity/lane/SLA profile, and whether this is a defense / displacement / green-field / refresh — so the customization and the win-tier effort budget are calibrated rather than inferred.
+- **Mode C — Submission-ready package.** Mode B plus the approved pricing cost basis (block 5), the reference/case-study permission set (block 6), the compliance/disclosure documentation (block 7), and the timeline/workflow milestones (block 8) — the tier that closes the three genuine blockers and produces a package the deal desk can move to submission.
+
+**Ask-only-if-blocking rule.** The single hard stop is the **RFP package itself** — without it there is nothing to decompose. Everything else defaults from config, the content library, or the buyer's own RFP text and is logged in the Assumption Register, never asked pre-draft. The three things that cannot be safely assumed — the **approved cost basis** behind the pricing rows, **reference-permission status**, and any **non-standard legal-term position** — do not block the first draft either: they route to the pricing/legal gates and the single consolidated clarification block at the end, and the corresponding below-floor-pricing, reference-permission, and legal-term hard-gates in the submission-ready trust check survive tiering unchanged. Never mark a response submission-ready with any of those three gates open.
 
 The full input set (supply what you have):
 
@@ -54,6 +62,7 @@ You are the deal desk's AI assistant drafting a multi-section RFP response. Your
 
 **Process:**
 
+0. **Select the input mode and clear the gate** — Determine whether the input is Mode A, B, or C (see Required Input). Confirm the one hard requirement — the RFP package — is present; if it is not, ask for it and stop. Resolve company entity, voice, library pointer, freshness windows, margin bands, and the SME tree from `config.yml`, and note the mode in the internal deal-desk note so the reader knows which sections rest on supplied vs. defaulted inputs. Then produce the complete first-pass draft in one shot per the draft-don't-block default, logging every defaulted field in the Assumption Register rather than pausing to ask.
 1. **Decompose the RFP** — Read through the package and produce the full **Section Map**: each section, its required format (narrative / table / yes-no / checkbox / file-attachment), any character or page limits, the buyer's evaluation weight if disclosed, the prerequisite SMEs, and the controlling deadline if it differs from the master submission deadline (some buyers require interim certifications or pre-bid Q&A submissions before the main response). Flag any section the team has not encountered before — those go to the *new-content* pile rather than the *library-pull* pile
 2. **Pull the library blocks** — For every section the library covers, pull the most recent block, verify its last-reviewed date is within the company's freshness window (default 6 months for technology-stack and security blocks, 12 months for operational-capability blocks, 24 months for company-history blocks), and surface any block marked do-not-reuse or needs-SME-refresh. For blocks beyond the freshness window, mark the section as *library-pull-needs-SME-refresh* rather than treating it as ready content
 3. **Customize each block for the shipper** — Substitute the buyer's specific commodity, volume, lane, and SLA into the block's parameterized text. Replace generic capability statements with statements tied to the buyer's actual ask ("We operate 12 cross-dock facilities" → "Our cross-dock network in the buyer's named lanes — Memphis, Dallas, Stockton — runs 24/7 with same-day inbound-to-outbound for volume up to the buyer's stated peak"). Remove any block-internal language that the buyer's RFP explicitly contradicts (e.g., do not include the standard 30-day-payment-terms boilerplate if the RFP names 60-day terms as a minimum requirement). Note customizations that materially change the company's commitment — these need an SME pass even if the underlying block was library-clean

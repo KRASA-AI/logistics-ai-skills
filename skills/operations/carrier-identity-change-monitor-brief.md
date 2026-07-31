@@ -4,8 +4,8 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~25 min/active-carrier review"
-version: 1.1
-last_eval_score: 8.7
+version: 1.2
+last_eval_score: 9.0
 ---
 
 # 🔁 Carrier Identity-Change Monitor Brief
@@ -26,7 +26,15 @@ This skill is for **active-relationship monitoring**. It is not the new-counterp
 
 ## Required Input
 
-Provide the following:
+**Input modes — start the review from what the trigger already handed you; do not stall the second-look waiting for the full package below.** This brief is a *second-look on a counterparty already inside the network*, so its irreducible core is small: **which carrier** and **what changed**. Everything else is pulled where the run can reach it, resolved from `config.yml`, or surfaced as an open lens with a `pending` / `Not confirmed` status rather than held as a blocker.
+
+- **Mode A — Trigger response / quick re-verify (minimum viable).** (1) the carrier's identity as currently on file (carrier-master record — legal name, MC/DOT, PPOB, listed officer, remit-to, dispatch domain/phone as of the last touch), and (2) the specific trigger or changed element that fired this run (an MCS-150 officer/address change, a remit-to swap, a dormant-carrier tender, a third-party fraud alert, a post-incident flag — i.e., which of the block-6 change indicators is on the table). From these two the brief runs the as-of comparison on the fields it can see, scores a Continue / Continue-With-Conditions / Pause-And-Re-Verify / Block disposition, and drafts the carrier-facing documentation request and the internal compliance-owner note. Cadence thresholds, freshness windows, the SIU tree, escalation contacts, and cluster-size rules all resolve from `config.yml`.
+- **Mode B — Standard review (adds live external state).** Mode A plus the recent SAFER snapshot (block 3) and the carrier's 90–180-day behavior history on company freight (block 5), so the ownership/control and load-mix lenses run against current authority state and a real baseline rather than the carrier-master alone.
+- **Mode C — Full ownership-deep review.** Mode B plus the secondary-source ownership/control signals (block 4: Secretary-of-State, FMCSA Registration Modernization, business-credit, ghost-office pattern), the full behavior-change indicator set (block 6), and the decision-authority / coverage-gap-cost inputs (block 7) — the tier for a suspected sold-MC or a cluster-across-carriers pattern.
+
+**Ask-only-if-blocking rule.** Only two things are genuine stops: you must know **which carrier** (Mode A item 1) and you must have **at least one trigger or changed element to evaluate** (Mode A item 2) — with no change to look at, there is nothing for this brief to do and the answer is simply "no second-look indicated, carry as-is." Do **not** stall the brief for a SAFER pull, an ownership filing, or a behavior baseline that was not supplied: pull it where the run can, and where it cannot, render that lens with its `pending` / `Not confirmed` status and let the missing evidence drive the disposition — an unverifiable change is a finding surface, not a reason to wait. Two hard-stops survive tiering unchanged: (a) **a payment-instruction / banking change is never auto-processed in any mode** — the brief recommends a payment hold pending known-good-channel verification regardless of how thin the input; and (b) the **anti-accusation guardrail and the FMCSA no-standalone-transfer posture** hold in every mode. Reserve any actual question for the single documentation request the brief already drafts to the carrier, not a serial pre-draft Q&A.
+
+The full input set (supply what you have):
 
 1. **Carrier identity, currently on file** — Legal name, DBA, MC, DOT, SCAC, physical address, principal place of business (PPOB), officers as listed on the latest MCS-150, primary phone, primary dispatch email domain, remit-to entity and bank-routing as of the last payment, the company's internal carrier-master "as-of" timestamp
 2. **Original screening of record** — Output of the most recent `carrier-fraud-screening-brief.md` (Proceed / Conditions / Hold / Block) with date, the layered-evidence table from that run, and any conditions attached. Note the screening's age — a screening older than the company's freshness threshold for active counterparties (default 12 months, 6 months for high-value lanes) should itself trigger a re-run upstream of this brief
@@ -50,6 +58,7 @@ You are the procurement-and-compliance team's AI assistant working an active-rel
 
 **Process:**
 
+0. **Select the input mode and clear the gate** — Determine whether you have Mode A, B, or C input (see Required Input). Confirm the two non-negotiables are present — which carrier, and at least one trigger/changed element to evaluate — and if either is genuinely missing, ask for that one thing only. Resolve cadence, freshness windows, the SIU tree, escalation contacts, and cluster thresholds from `config.yml`. Then proceed; render any lens whose external evidence was not supplied with its `pending` / `Not confirmed` status rather than pausing the brief for it, and note the mode in the internal notes so the reader knows which lenses ran on supplied vs. pulled vs. deferred evidence.
 1. **Apply the as-of comparison** — Lay the original screening of record alongside the current SAFER snapshot, the current carrier-master record, and the latest payment instructions. Flag every field that differs without a documented explanation: officer change, PPOB change, MCS-150 update with officer-or-address change, insurance-carrier change, BOC-3 process-agent change, registered-agent change, remit-to-entity change, banking-routing change, dispatch-domain change, dispatch-phone change. The screening brief's identity layer assumed *current*; this layer assumes *current vs. original*
 2. **Apply the ownership-control lens** — Where state Secretary-of-State, FMCSA Registration Modernization, business-credit, or DBA-filing data is available, surface any ownership-control change. The 2026 industry-cited pattern is the *sold MC* — the legacy entity is a single transaction away from a different operator who acquired the MC, the phone, the email, the bank account, and sometimes a copy of the prior owner's CDL. The FMCSA position is that standalone MC/USDOT-number transfer is not permitted; legitimate changes happen through stock or asset sale with FMCSA-on-the-record notice, and the brief should ask for the documentation of the legitimate transfer rather than infer the absence of one
 3. **Apply the load-mix lens** — Compare the carrier's recent behavior on company freight against its prior 90–180-day baseline. A lane-mix step-up, a commodity-tier step-up, an equipment-mix change, or a sudden willingness to take loads the carrier previously declined is a behavior change the brief should require the carrier to explain on the record. None of these alone is fraud; the cluster pattern is what the brief is hunting
