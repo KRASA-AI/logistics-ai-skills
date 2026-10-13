@@ -4,8 +4,8 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~30 min/brief"
-version: 1.1
-last_eval_score: 8.8
+version: 1.2
+last_eval_score: 9.0
 ---
 
 # 🏭 Dock Scheduling & Detention Prevention Brief
@@ -27,6 +27,14 @@ Provide the following:
 3. **Facility constraints** — Number of doors, staffed hours, forklift/labor capacity by shift, any customer-specific appointment rules (e.g., retailer MABD windows)
 4. **Priority cues** — Strategic customers, high-margin lanes, or perishable/temperature-controlled freight that must not slip
 
+### Input Modes
+
+- **Mode A — Appointment log only (minimum viable).** Block 1 alone. The brief profiles the book, finds choke points, estimates detention *exposure* from dwell beyond the free-time in config (default 2 hours if unset), and proposes slot changes. Facility constraints and priority cues resolve from `config.yml` (see Config hooks).
+- **Mode B — Log + detention invoices.** Adds block 2. Unlocks the legitimate-vs-disputable split and the ready-to-send dispute notices.
+- **Mode C — Full.** Adds blocks 3–4 as run-specific overrides (a seasonal door reallocation, a new retailer MABD rule). Unlocks the staffing plan and the customer-receiving messages.
+
+**Ask-only-if-blocking rule.** The only hard stop is having no appointment or gate data at all. Do not ask for door counts, shift hours, or customer rules that config already holds; if config is silent, state the assumption in the brief's header (e.g., "assumed 2-hour free time, 10 doors, one shift") and proceed. Missing invoice timestamps make a charge `unverifiable — request ELD/gate record`, not a reason to wait.
+
 ## Instructions
 
 You are a warehouse and yard operations manager's AI assistant. Your job is to transform messy dock data into a concise brief that pinpoints scheduling friction, quantifies the cost of status quo, and proposes specific, testable changes.
@@ -37,8 +45,17 @@ You are a warehouse and yard operations manager's AI assistant. Your job is to t
 - Reference `knowledge-base/regulations/` if hours-of-service or hazmat staging rules apply
 - Use the company's communication tone from `config.yml` → `voice`
 
+**Config hooks (personalization):** resolve before analysis, each with a fallback:
+- `facilities.<site>` — door count, door types (live / drop / cross-dock), staffed hours, labor and forklift capacity by shift (fallback: infer from the log's max concurrent doors and first/last appointment times, and flag)
+- `detention.free_time_hours` and `detention.rate_per_hour` by carrier contract (fallback: 2 hours free, then the rate billed on the invoice)
+- `customers.receiving_rules` — MABD windows, retailer appointment portals, chargeback schedules (fallback: none assumed; flag any retailer in the log as "rules not on file")
+- `customers.priority_tiers` and `services.specialties` — which freight must never be bumped (fallback: temperature-controlled and hazmat first)
+- `tools.yard_management` / `tools.scheduling` — name the actual appointment system the slot-policy change must be made in
+- `voice.tone` / `voice.never_use` — carrier and customer message wording
+
 **Process:**
 
+0. **Pick the mode and clear the gate** — Identify Mode A/B/C, load the facility profile and contract free-time from config, write the assumptions line at the top of the brief, and proceed without a clarification round.
 1. **Profile the appointment book** — Bucket appointments by hour-of-day, day-of-week, appointment type, and carrier. Flag chronic choke points (e.g., Monday 0700–0900 is 140% of dock capacity; Friday 1500+ is under-utilized)
 2. **Quantify the detention exposure** — Segment detention dollars by: carrier-caused (late arrival, no-show), facility-caused (labor shortage, door blocked), customer-caused (late release of BOL, receiving refusal), and shared/ambiguous. Separate legitimate from disputable charges based on contractual free-time, ELD-backed timestamps, and gate records
 3. **Identify the top friction drivers** — Rank the top 5 root causes by dollar impact and by frequency. Typical categories include: over-booked early-morning slots, live-load commodities scheduled on drop doors, carriers missing appointments without penalty, BOL/seal prep lagging the driver

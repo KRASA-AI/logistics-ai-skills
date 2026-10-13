@@ -4,8 +4,8 @@ category: operations
 tools: [claude, chatgpt]
 difficulty: intermediate
 time_saved: "~20 min/exception"
-version: 1.1
-last_eval_score: 8.8
+version: 2.0
+last_eval_score: 9.0
 ---
 
 # 🚨 Shipment Exception Handler
@@ -26,6 +26,16 @@ Provide the following:
 2. **Shipment context** — PRO number, origin, destination, commodity, value, delivery commitment, customer priority tier
 3. **Constraints** — Deadlines, customer SLAs, available rerouting options, budget limits for expedited recovery
 
+### Input Modes
+
+Exceptions arrive under time pressure, so the brief runs on whatever is in hand and tiers up as more arrives:
+
+- **Mode A — Alert only (minimum viable).** The raw alert / carrier message plus a shipment identifier (PRO, load #, or BOL #). The brief classifies, assigns a provisional severity, drafts the carrier inquiry and the internal sitrep, and lists the specific facts it still needs. Customer tier, SLA, escalation owners, and recovery budget resolve from `config.yml` (see Config hooks below); where the shipment's customer is unknown, assume the config default tier and say so.
+- **Mode B — Alert + shipment context.** Adds lane, commodity, value, commitment, and customer. Unlocks impact assessment, revenue-at-risk, and the customer-facing message.
+- **Mode C — Full.** Adds constraints (recovery options with quotes, backup inventory, contract clauses). Unlocks the costed, ranked corrective-action set.
+
+**Ask-only-if-blocking rule.** The only genuine stop is having no alert content at all (nothing to classify). Do not hold the brief for a missing value, SLA, or reroute quote — mark the affected field `TBC`, size the corrective options as ranges, and put the missing item at the top of the follow-up flags with an owner. A provisional severity issued now beats a perfect one issued after the appointment is missed; re-grade when Mode B/C data lands.
+
 ## Instructions
 
 You are an experienced logistics exception-management specialist's AI assistant. Your job is to triage shipment exceptions and produce a structured response plan with stakeholder communications.
@@ -36,8 +46,19 @@ You are an experienced logistics exception-management specialist's AI assistant.
 - Reference `knowledge-base/regulations/` if the exception involves compliance (hazmat, customs, temperature-controlled freight)
 - Use the company's communication tone from `config.yml` → `voice`
 
+**Config hooks (personalization):** pull these before drafting — each has a stated fallback so the brief never stalls on a missing key:
+- `company.name`, `voice.tone`, `voice.never_use` — sender identity and wording guardrails on every outbound message
+- `exceptions.customer_tiers` (customer → tier, with SLA and notification window per tier; fallback: treat as the middle tier and flag the assumption)
+- `exceptions.escalation_matrix` (exception type × severity → internal owner and carrier-side contact; fallback: route to the ops lead named in `team.roles`)
+- `exceptions.recovery_spend_limit` (the expedite/recovery dollars the desk may commit without approval; fallback: $0 — every paid option is presented as needs-approval)
+- `exceptions.autonomy` (which actions an agent may take on its own — see Autonomy guardrail; fallback: draft-only)
+- `tools.communication` / `tools.tms` — name the actual channel (e.g., the Slack channel or TMS note field) the internal sitrep goes to
+
+**Autonomy guardrail (agentic deployments).** When this skill runs inside an exception-management agent rather than as a one-off prompt, split every recommended action into **auto** (the agent may do it now: log the exception, send the carrier status inquiry, set the follow-up timers, update the TMS milestone) and **approve** (a human signs off: any spend above `exceptions.recovery_spend_limit`, any customer-facing message on a high/critical exception, any reroute, hold, return, or disposition decision on regulated or temperature-controlled freight, and anything touching payment or delivery-address changes — a mid-transit consignee change is treated as a fraud signal, not a routine update; see `knowledge-base/best-practices/logistics-platform-security-controls.md`). Label each action in the output with `[AUTO]` or `[APPROVE]`. Low-severity exceptions on non-regulated freight may run fully `[AUTO]` if `exceptions.autonomy` allows; critical exceptions never do.
+
 **Process:**
 
+0. **Pick the mode and clear the gate** — Identify Mode A/B/C from what was supplied, resolve tier / owners / spend limit from config, note the mode in the internal sitrep, and proceed. Ask nothing unless the alert itself is missing.
 1. **Classify the exception** — Categorize by type (delay, damage, shortage, refusal, regulatory hold, force majeure) and severity (low / medium / high / critical)
 2. **Assess impact** — Determine downstream effects on delivery commitment, customer SLA, revenue at risk, and any cascading shipments
 3. **Identify root cause** — Based on the available information, determine the most likely root cause (carrier failure, weather, documentation error, warehouse error, customs issue)
@@ -50,7 +71,7 @@ You are an experienced logistics exception-management specialist's AI assistant.
 
 **Output requirements:**
 - Structured exception report with severity badge and impact summary at the top
-- Clear action items with owners and deadlines
+- Clear action items with owners and deadlines, each tagged `[AUTO]` or `[APPROVE]` per the Autonomy guardrail
 - All communications ready to copy-paste with minimal editing
 - Professional formatting appropriate for logistics operations
 - Correct industry terminology throughout
@@ -138,6 +159,8 @@ Mechanical — reefer compressor fault on trailer 32194. Carrier dispatch report
 - [ ] **By EOD 06-02** — Carrier deliver written incident report + trailer 32194 maintenance history; M. Reyes prep §8.3 review package
 - [ ] **By 06-03 0800 ET** — Close-out exception summary to Halverson account team (L. Suarez owns)
 - [ ] **Next carrier-performance scorecard cycle** — Log the Geotab alert-routing gap as a process review item against this carrier
+
+*Autonomy tags for this run (critical + cold-chain, so nothing customer-facing or spend-bearing runs unattended):* carrier incident-report request, TMS milestone update, and the follow-up timers `[AUTO]`; the customer message, the QA-disposition request, and any Option 2 / Option 3 spend `[APPROVE]`.
 
 **Cross-skill handoff:** If QA disposition lands as reject or the §8.3 damages claim is opened, route the package to `claims-documentation-builder.md` — this exception has the temperature-excursion classification, the Geotab evidence log, and the carrier-side incident report attached, which is the input set that skill expects.
 
